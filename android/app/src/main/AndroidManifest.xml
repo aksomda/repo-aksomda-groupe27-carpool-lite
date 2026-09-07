@@ -12,6 +12,14 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
+            <!-- Clé API Google Maps pour Android.
+                 Remplacez YOUR_GOOGLE_MAPS_API_KEY par votre propre clé
+                 (https://console.cloud.google.com/google/maps-apis/credentials),
+                 avec l'API "Maps SDK for Android" activée. -->
+            <meta-data
+              android:name="com.google.android.geo.API_KEY"
+              android:value="YOUR_GOOGLE_MAPS_API_KEY"
+              />
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues

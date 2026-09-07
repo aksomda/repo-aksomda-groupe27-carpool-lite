@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/universities/presentation/pages/add_university_page.dart';
+import '../../features/universities/presentation/pages/university_list_page.dart';
+import '../../features/ufrs/presentation/pages/ufr_list_page.dart';
+import '../../features/formations/presentation/pages/formation_list_page.dart';
+import '../../features/levels/presentation/pages/academic_level_list_page.dart';
+
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/auth',
+  // Route de démarrage temporairement pointée sur la gestion des
+  // universités pour faciliter les tests graphiques de cette fonctionnalité.
+  // Remettez '/auth' une fois l'écran d'authentification implémenté.
+  initialLocation: '/universities',
   routes: [
     // 1. Authentification & Profil
     GoRoute(
@@ -19,8 +28,27 @@ final GoRouter appRouter = GoRouter(
     // 2. Universités
     GoRoute(
       path: '/universities',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Universités'))),
+      builder: (context, state) => const UniversityListPage(),
+      routes: [
+        GoRoute(
+          path: 'add',
+          builder: (context, state) => const AddUniversityPage(),
+        ),
+      ],
+    ),
+
+    // 2.4 Gestion académique : UFRs, Formations, Niveaux/Classes
+    GoRoute(
+      path: '/ufrs',
+      builder: (context, state) => const UfrListPage(),
+    ),
+    GoRoute(
+      path: '/formations',
+      builder: (context, state) => const FormationListPage(),
+    ),
+    GoRoute(
+      path: '/levels',
+      builder: (context, state) => const AcademicLevelListPage(),
     ),
 
     // 3. Véhicules
