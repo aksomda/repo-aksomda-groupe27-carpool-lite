@@ -25,6 +25,11 @@ class AppDrawer extends StatelessWidget {
             onTap: () => context.go('/universities'),
           ),
           ListTile(
+            leading: const Icon(Icons.apartment),
+            title: const Text('Campus'),
+            onTap: () => context.go('/campus'),
+          ),
+          ListTile(
             leading: const Icon(Icons.account_balance),
             title: const Text('UFRs'),
             onTap: () => context.go('/ufrs'),

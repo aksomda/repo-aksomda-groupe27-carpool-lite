@@ -1,1 +1,43 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"carpoollite","appId":"1:254475674559:android:bf4f937024649afac4370a","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"carpoollite","configurations":{"android":"1:254475674559:android:bf4f937024649afac4370a","ios":"1:254475674559:ios:719b5cbf892bd478c4370a","macos":"1:254475674559:ios:719b5cbf892bd478c4370a","web":"1:254475674559:web:d30736e7230d291ac4370a","windows":"1:254475674559:web:b834202f8b620aebc4370a"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "carpoollite",
+          "appId": "1:254475674559:android:bf4f937024649afac4370a",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "carpoollite",
+          "configurations": {
+            "android": "1:254475674559:android:bf4f937024649afac4370a",
+            "ios": "1:254475674559:ios:719b5cbf892bd478c4370a",
+            "macos": "1:254475674559:ios:719b5cbf892bd478c4370a",
+            "web": "1:254475674559:web:d30736e7230d291ac4370a",
+            "windows": "1:254475674559:web:b834202f8b620aebc4370a"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local",
+        ".env"
+      ]
+    }
+  ]
+}

@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 
-import '../../../campus/data/models/campus_model.dart';
-import '../../../campus/data/repositories/campus_repository.dart';
-import '../../data/models/ufr_model.dart';
-import '../../data/repositories/ufr_repository.dart';
+import '../../../universities/data/models/university_model.dart';
+import '../../../universities/data/repositories/university_repository.dart';
+import '../../data/models/campus_model.dart';
+import '../../data/repositories/campus_repository.dart';
 
-/// Formulaire unique servant à la fois pour la création et la modification
-/// d'une UFR (si [existing] est fourni, l'écran passe en mode édition).
-class AddEditUfrPage extends StatefulWidget {
-  const AddEditUfrPage({super.key, this.existing});
+/// Formulaire unique pour la création et la modification d'un campus.
+class AddEditCampusPage extends StatefulWidget {
+  const AddEditCampusPage({super.key, this.existing});
 
-  final UfrModel? existing;
+  final CampusModel? existing;
 
   @override
-  State<AddEditUfrPage> createState() => _AddEditUfrPageState();
+  State<AddEditCampusPage> createState() => _AddEditCampusPageState();
 }
 
-class _AddEditUfrPageState extends State<AddEditUfrPage> {
+class _AddEditCampusPageState extends State<AddEditCampusPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _codeController;
 
-  String? _selectedCampusId;
-  String? _selectedCampusName;
+  String? _selectedUniversityId;
+  String? _selectedUniversityName;
   bool _isSaving = false;
 
   bool get _isEditing => widget.existing != null;
@@ -48,41 +47,41 @@ class _AddEditUfrPageState extends State<AddEditUfrPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedCampusId == null && widget.existing == null) {
+    if (_selectedUniversityId == null && widget.existing == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez sélectionner un campus.')),
+        const SnackBar(content: Text('Veuillez sélectionner une université.')),
       );
       return;
     }
 
     setState(() => _isSaving = true);
 
-    final campusId = _selectedCampusId ?? widget.existing!.campusId;
-    final campusName = _selectedCampusName ?? widget.existing!.campusName;
+    final universityId = _selectedUniversityId ?? widget.existing!.universityId;
+    final universityName = _selectedUniversityName ?? widget.existing!.universityName;
 
     try {
       if (_isEditing) {
-        final updated = UfrModel(
+        final updated = CampusModel(
           id: widget.existing!.id,
           name: _nameController.text.trim(),
           code: _codeController.text.trim(),
-          campusId: campusId,
-          campusName: campusName,
+          universityId: universityId,
+          universityName: universityName,
         );
-        await UfrRepository.instance.updateUfr(updated);
+        await CampusRepository.instance.updateCampus(updated);
       } else {
-        final created = UfrModel(
+        final created = CampusModel(
           id: '',
           name: _nameController.text.trim(),
           code: _codeController.text.trim(),
-          campusId: campusId,
-          campusName: campusName,
+          universityId: universityId,
+          universityName: universityName,
         );
-        await UfrRepository.instance.createUfr(created);
+        await CampusRepository.instance.createCampus(created);
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isEditing ? 'UFR modifiée.' : 'UFR ajoutée.')),
+        SnackBar(content: Text(_isEditing ? 'Campus modifié.' : 'Campus ajouté.')),
       );
       Navigator.of(context).pop();
     } catch (e) {
@@ -96,7 +95,7 @@ class _AddEditUfrPageState extends State<AddEditUfrPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? 'Modifier l\'UFR' : 'Ajouter une UFR')),
+      appBar: AppBar(title: Text(_isEditing ? 'Modifier le campus' : 'Ajouter un campus')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -106,7 +105,8 @@ class _AddEditUfrPageState extends State<AddEditUfrPage> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: "Nom de l'UFR",
+                  labelText: 'Nom du campus',
+                  hintText: 'ex: Campus de Nasso',
                   border: OutlineInputBorder(),
                 ),
                 validator: _requiredValidator,
@@ -115,45 +115,47 @@ class _AddEditUfrPageState extends State<AddEditUfrPage> {
               TextFormField(
                 controller: _codeController,
                 decoration: const InputDecoration(
-                  labelText: 'Code / Sigle',
-                  hintText: 'ex: UFR-SEA',
+                  labelText: 'Code',
+                  hintText: 'ex: CAMP-NASSO',
                   border: OutlineInputBorder(),
                 ),
                 validator: _requiredValidator,
               ),
               const SizedBox(height: 12),
-              StreamBuilder<List<CampusModel>>(
-                stream: CampusRepository.instance.getCampuses(),
+              StreamBuilder<List<UniversityModel>>(
+                stream: UniversityRepository.instance.getUniversities(),
                 builder: (context, snapshot) {
-                  final campuses = snapshot.data ?? [];
+                  final universities = snapshot.data ?? [];
 
-                  if (_isEditing && _selectedCampusId == null) {
-                    final match = campuses
-                        .where((c) => c.id == widget.existing!.campusId)
+                  if (_isEditing && _selectedUniversityId == null) {
+                    final match = universities
+                        .where((u) => u.id == widget.existing!.universityId)
                         .toList();
                     if (match.isNotEmpty) {
-                      _selectedCampusId = match.first.id;
-                      _selectedCampusName = match.first.name;
+                      _selectedUniversityId = match.first.id;
+                      _selectedUniversityName = match.first.name;
                     }
                   }
 
                   return DropdownButtonFormField<String>(
-                    value: _selectedCampusId,
+                    value: _selectedUniversityId,
                     decoration: const InputDecoration(
-                      labelText: 'Campus de rattachement',
+                      labelText: 'Université de rattachement',
                       border: OutlineInputBorder(),
                     ),
                     hint: Text(
-                      _isEditing ? widget.existing!.campusName : 'Sélectionnez un campus',
+                      _isEditing
+                          ? widget.existing!.universityName
+                          : 'Sélectionnez une université',
                     ),
-                    items: campuses
-                        .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                    items: universities
+                        .map((u) => DropdownMenuItem(value: u.id, child: Text(u.name)))
                         .toList(),
                     onChanged: (value) {
-                      final match = campuses.where((c) => c.id == value).toList();
+                      final match = universities.where((u) => u.id == value).toList();
                       setState(() {
-                        _selectedCampusId = value;
-                        _selectedCampusName = match.isNotEmpty ? match.first.name : null;
+                        _selectedUniversityId = value;
+                        _selectedUniversityName = match.isNotEmpty ? match.first.name : null;
                       });
                     },
                   );

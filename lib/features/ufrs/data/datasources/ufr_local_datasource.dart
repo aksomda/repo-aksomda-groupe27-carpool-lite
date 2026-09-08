@@ -14,15 +14,15 @@ class UfrLocalDataSource {
       id: 'ufr-demo-1',
       name: 'UFR Sciences Exactes et Appliquées',
       code: 'UFR-SEA',
-      universityId: 'demo-1',
-      universityName: 'Université Joseph Ki-Zerbo',
+      campusId: 'campus-demo-1',
+      campusName: 'Campus de Zogona',
     ),
     const UfrModel(
       id: 'ufr-demo-2',
       name: 'UFR Sciences Économiques et de Gestion',
       code: 'UFR-SEG',
-      universityId: 'demo-1',
-      universityName: 'Université Joseph Ki-Zerbo',
+      campusId: 'campus-demo-1',
+      campusName: 'Campus de Zogona',
     ),
   ];
 
@@ -44,8 +44,8 @@ class UfrLocalDataSource {
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       name: ufr.name,
       code: ufr.code,
-      universityId: ufr.universityId,
-      universityName: ufr.universityName,
+      campusId: ufr.campusId,
+      campusName: ufr.campusName,
     );
     _ufrs.add(withId);
     _emit();

@@ -1,42 +1,42 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../domain/entities/ufr.dart';
+import '../../domain/entities/campus.dart';
 
-class UfrModel extends Ufr {
-  const UfrModel({
+class CampusModel extends Campus {
+  const CampusModel({
     required super.id,
     required super.name,
     required super.code,
-    required super.campusId,
-    required super.campusName,
+    required super.universityId,
+    required super.universityName,
     super.isDeleted = false,
   });
 
-  UfrModel copyWith({
+  CampusModel copyWith({
     String? name,
     String? code,
-    String? campusId,
-    String? campusName,
+    String? universityId,
+    String? universityName,
     bool? isDeleted,
   }) {
-    return UfrModel(
+    return CampusModel(
       id: id,
       name: name ?? this.name,
       code: code ?? this.code,
-      campusId: campusId ?? this.campusId,
-      campusName: campusName ?? this.campusName,
+      universityId: universityId ?? this.universityId,
+      universityName: universityName ?? this.universityName,
       isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 
-  factory UfrModel.fromFirestore(DocumentSnapshot doc) {
+  factory CampusModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    return UfrModel(
+    return CampusModel(
       id: doc.id,
       name: data['name'] ?? '',
       code: data['code'] ?? '',
-      campusId: data['campusId'] ?? '',
-      campusName: data['campusName'] ?? '',
+      universityId: data['universityId'] ?? '',
+      universityName: data['universityName'] ?? '',
       isDeleted: data['isDeleted'] ?? false,
     );
   }
@@ -45,8 +45,8 @@ class UfrModel extends Ufr {
     return {
       'name': name,
       'code': code,
-      'campusId': campusId,
-      'campusName': campusName,
+      'universityId': universityId,
+      'universityName': universityName,
       'isDeleted': isDeleted,
     };
   }

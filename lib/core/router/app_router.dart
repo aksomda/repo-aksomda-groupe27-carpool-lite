@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/universities/presentation/pages/add_university_page.dart';
 import '../../features/universities/presentation/pages/university_list_page.dart';
+import '../../features/campus/presentation/pages/campus_list_page.dart';
 import '../../features/ufrs/presentation/pages/ufr_list_page.dart';
 import '../../features/formations/presentation/pages/formation_list_page.dart';
 import '../../features/levels/presentation/pages/academic_level_list_page.dart';
@@ -37,7 +38,11 @@ final GoRouter appRouter = GoRouter(
       ],
     ),
 
-    // 2.4 Gestion académique : UFRs, Formations, Niveaux/Classes
+    // 2.4 Gestion académique : Campus, UFRs, Formations, Niveaux/Classes
+    GoRoute(
+      path: '/campus',
+      builder: (context, state) => const CampusListPage(),
+    ),
     GoRoute(
       path: '/ufrs',
       builder: (context, state) => const UfrListPage(),

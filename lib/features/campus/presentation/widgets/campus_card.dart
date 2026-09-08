@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../../data/models/ufr_model.dart';
+import '../../data/models/campus_model.dart';
 
-class UfrCard extends StatelessWidget {
-  const UfrCard({
+class CampusCard extends StatelessWidget {
+  const CampusCard({
     super.key,
-    required this.ufr,
+    required this.campus,
     required this.onEdit,
     required this.onDelete,
   });
 
-  final UfrModel ufr;
+  final CampusModel campus;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -23,10 +23,10 @@ class UfrCard extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          child: Icon(Icons.account_balance, color: Theme.of(context).primaryColor),
+          child: Icon(Icons.apartment, color: Theme.of(context).primaryColor),
         ),
-        title: Text(ufr.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('${ufr.code} • ${ufr.campusName}'),
+        title: Text(campus.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('${campus.code} • ${campus.universityName}'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

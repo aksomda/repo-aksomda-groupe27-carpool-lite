@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../../core/constants/firestore_timeout.dart';
 import '../models/ufr_model.dart';
 
 class UfrRemoteDataSource {
@@ -11,23 +14,37 @@ class UfrRemoteDataSource {
       firestore.collection('ufrs');
 
   Future<void> createUfr(UfrModel ufr) async {
-    await _collection.add(ufr.toFirestore());
+    await _timedFuture(_collection.add(ufr.toFirestore()));
   }
 
   Future<void> updateUfr(UfrModel ufr) async {
-    await _collection.doc(ufr.id).update(ufr.toFirestore());
+    await _timedFuture(_collection.doc(ufr.id).update(ufr.toFirestore()));
   }
 
   /// Suppression logique : on ne retire pas le document, on le marque
   /// comme supprimé pour qu'il disparaisse des listes actives.
   Future<void> softDeleteUfr(String id) async {
-    await _collection.doc(id).update({'isDeleted': true});
+    await _timedFuture(_collection.doc(id).update({'isDeleted': true}));
   }
 
   Stream<List<UfrModel>> getUfrs() {
     return _collection
         .where('isDeleted', isEqualTo: false)
         .snapshots()
+        .timeout(kFirestoreTimeout, onTimeout: (sink) => sink.addError(_timeoutMessage))
         .map((snapshot) => snapshot.docs.map(UfrModel.fromFirestore).toList());
   }
+
+  Future<T> _timedFuture<T>(Future<T> future) async {
+    try {
+      return await future.timeout(kFirestoreTimeout);
+    } on TimeoutException {
+      throw Exception(_timeoutMessage);
+    }
+  }
 }
+
+const String _timeoutMessage =
+    "Délai dépassé en contactant Firestore. Vérifiez que la base Firestore "
+    "a bien été créée pour votre projet Firebase et que les règles de "
+    "sécurité autorisent l'accès (voir DEPANNAGE_FIRESTORE.md).";
