@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "943592320",
+    "project_id": "acarpool-lite-bc318",
+    "storage_bucket": "acarpool-lite-bc318.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:943592320:android:1527c6da26848ddee7e765",
+        "android_client_info": {
+          "package_name": "com.example.repo_aksomda_groupe27_carpool_lite"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBc7k591-hNWt_rZK1ffAEjY9UEAagJR5s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

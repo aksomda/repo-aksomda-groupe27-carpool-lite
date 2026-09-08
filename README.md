@@ -4,8 +4,6 @@ Application Flutter de covoiturage des étudiants.
 Le projet est organisé selon une approche **Feature-First + Clean Architecture** et
 communique avec firebase.
 
-
-
 ## 1. Fonctionnalités
 
 ### Authentification double facteur
@@ -36,7 +34,7 @@ stratégie de cache pour les lectures.
 
 Le projet suit une organisation Feature-First :
 
-```text
+````text
 lib/
 │
 ├── core/
@@ -117,7 +115,7 @@ features/<feature>/
     ├── controllers/
     ├── pages/
     └── widgets/
-```
+````
 
 ### Règles de dépendance
 
@@ -127,7 +125,6 @@ features/<feature>/
 - Les `local datasource` sont responsables de la persistance Hive.
 - Les repositories orchestrent réseau, cache et traduction des erreurs.
 - Les controllers orchestrent l'état de l'interface et ne connaissent pas les détails de
-
 
 Cette séparation facilite les tests unitaires et limite le couplage entre l'interface,
 le réseau et la persistance.

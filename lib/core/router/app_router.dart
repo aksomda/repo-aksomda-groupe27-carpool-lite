@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/trips/presentation/pages/publish_trip_page.dart';
+import '../../features/trips/presentation/pages/search_trips_page.dart';
+import '../../features/trips/presentation/pages/trip_history_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/auth',
+
   routes: [
     // 1. Authentification & Profil
     GoRoute(
@@ -10,6 +14,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) =>
           const Scaffold(body: Center(child: Text('Écran Authentification'))),
     ),
+
     GoRoute(
       path: '/profile',
       builder: (context, state) =>
@@ -30,11 +35,23 @@ final GoRouter appRouter = GoRouter(
           const Scaffold(body: Center(child: Text('Gestion des Véhicules'))),
     ),
 
-    // 4. Trajets (Recherche, Création, Itinéraire)
+    // 4. Trajets
     GoRoute(
       path: '/trips',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Trajets'))),
+      builder: (context, state) => const Scaffold(body: Center(child: Text('Gestion des Trajets'))),
+      routes: [
+        // Publication
+        GoRoute(path: 'publish', builder: (context, state) => const PublishTripPage()),
+
+        // Recherche
+        GoRoute(path: 'search', builder: (context, state) => const SearchTripsPage()),
+
+        // Historique
+        GoRoute(
+          path: 'history',
+          builder: (context, state) => const TripHistoryPage(userId: 'TEMP_USER_ID'),
+        ),
+      ],
     ),
 
     // 5. Réservations
@@ -44,7 +61,7 @@ final GoRouter appRouter = GoRouter(
           const Scaffold(body: Center(child: Text('Gestion des Réservations'))),
     ),
 
-    // 6. Chat (Messagerie)
+    // 6. Chat
     GoRoute(
       path: '/chat',
       builder: (context, state) =>
@@ -68,11 +85,11 @@ final GoRouter appRouter = GoRouter(
     // 9. Statistiques
     GoRoute(
       path: '/statistics',
-      builder: (context, state) => const Scaffold(
-        body: Center(child: Text('Tableau de bord Statistiques')),
-      ),
+      builder: (context, state) =>
+          const Scaffold(body: Center(child: Text('Tableau de bord Statistiques'))),
     ),
   ],
+
   errorBuilder: (context, state) =>
       Scaffold(body: Center(child: Text('Route introuvable : ${state.error}'))),
 );
