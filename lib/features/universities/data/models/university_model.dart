@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/entities/university.dart';
+import '../../domain/entities/university_entity.dart';
 
-class UniversityModel extends University {
+class UniversityModel extends UniversityEntity {
   UniversityModel({
     required super.id,
     required super.name,
@@ -11,7 +11,6 @@ class UniversityModel extends University {
     required super.address,
   });
 
-  // Convertir un document Firestore (venant de la base) en UniversityModel
   factory UniversityModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return UniversityModel(
@@ -24,7 +23,6 @@ class UniversityModel extends University {
     );
   }
 
-  // Convertir l'objet en Map pour l'enregistrer dans Firestore
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,
