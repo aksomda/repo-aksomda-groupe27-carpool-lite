@@ -12,6 +12,7 @@ class UserEntity {
   final String? universityId;
   final String? campusId;
   final bool isVerified;
+  final bool isActive;
   final String role;
 
   const UserEntity({
@@ -23,6 +24,7 @@ class UserEntity {
     this.universityId,
     this.campusId,
     this.isVerified = false,
+    this.isActive = true,
     this.role = 'student',
   });
 }

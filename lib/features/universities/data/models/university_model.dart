@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/entities/university_entity.dart';
+import '../../domain/entities/university.dart';
 
-class UniversityModel extends UniversityEntity {
+class UniversityModel extends University {
   UniversityModel({
     required super.id,
     required super.name,
@@ -11,18 +11,22 @@ class UniversityModel extends UniversityEntity {
     required super.address,
   });
 
+  // Convertir un document Firestore (venant de la base) en UniversityModel
   factory UniversityModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return UniversityModel(
       id: doc.id,
       name: data['name'] ?? '',
       city: data['city'] ?? '',
-      latitude: (data['latitude'] ?? 0.0).toDouble(),
-      longitude: (data['longitude'] ?? 0.0).toDouble(),
+      // .toString() gère aussi bien d'anciens documents où lat/long auraient
+      // été enregistrés en nombre que le nouveau format texte libre.
+      latitude: (data['latitude'] ?? '').toString(),
+      longitude: (data['longitude'] ?? '').toString(),
       address: data['address'] ?? '',
     );
   }
 
+  // Convertir l'objet en Map pour l'enregistrer dans Firestore
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,

@@ -10,6 +10,8 @@ class SignUpUserCase {
     required String name,
     required String email,
     required String password,
+    required String phone,
+    required Sex sex,
     String? universityId,
     String? campusId,
   }) async {
@@ -17,6 +19,8 @@ class SignUpUserCase {
       name: name,
       email: email,
       password: password,
+      phone: phone,
+      sex: sex,
       universityId: universityId,
       campusId: campusId,
     );

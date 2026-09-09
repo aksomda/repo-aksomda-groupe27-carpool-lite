@@ -14,6 +14,8 @@ class AuthRepositoryImpl implements AuthRepository {
     required String name,
     required String email,
     required String password,
+    required String phone,
+    required Sex sex,
     String? universityId,
     String? campusId,
   }) async {
@@ -21,6 +23,8 @@ class AuthRepositoryImpl implements AuthRepository {
       name: name,
       email: email,
       password: password,
+      phone: phone,
+      sex: sex,
       universityId: universityId,
       campusId: campusId,
     );
@@ -56,5 +60,15 @@ class AuthRepositoryImpl implements AuthRepository {
       uid: uid,
       studentId: studentId,
     );
+  }
+
+  @override
+  Future<void> sendEmailVerification() {
+    return remoteDataSource.sendEmailVerification();
+  }
+
+  @override
+  Future<bool> checkEmailVerification() {
+    return remoteDataSource.checkEmailVerification();
   }
 }

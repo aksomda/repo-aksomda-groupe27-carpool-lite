@@ -12,6 +12,7 @@ class UserModel extends UserEntity {
     super.universityId,
     super.campusId,
     super.isVerified,
+    super.isActive,
     super.role,
   });
 
@@ -50,6 +51,8 @@ class UserModel extends UserEntity {
       universityId: data['universityId'] as String?,
       campusId: data['campusId'] as String?,
       isVerified: data['isVerified'] as bool? ?? false,
+      // Les comptes existants restent actifs après la migration.
+      isActive: data['isActive'] as bool? ?? true,
       role: data['role'] as String? ?? 'student',
     );
   }
@@ -63,6 +66,7 @@ class UserModel extends UserEntity {
       'universityId': universityId,
       'campusId': campusId,
       'isVerified': isVerified,
+      'isActive': isActive,
       'role': role,
     };
   }
@@ -77,6 +81,7 @@ class UserModel extends UserEntity {
       universityId: user.universityId,
       campusId: user.campusId,
       isVerified: user.isVerified,
+      isActive: user.isActive,
       role: user.role,
     );
   }

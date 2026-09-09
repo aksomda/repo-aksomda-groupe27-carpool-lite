@@ -1,78 +1,68 @@
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../di/injector.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/verify_student_screen.dart';
+import '../../features/auth/presentation/screens/email_otp_screen.dart';
+import '../../features/universities/presentation/screens/university_selection_screen.dart';
+import '../../features/navigation/presentation/screens/app_dashboard_screen.dart';
+import '../../features/trips/presentation/screens/publish_trip_screen.dart';
+import '../../features/trips/presentation/screens/search_trips_screen.dart';
+import '../../features/trips/presentation/screens/trip_history_screen.dart';
+import '../../features/bookings/presentation/screens/my_bookings_screen.dart';
+import '../../features/vehicles/presentation/screens/vehicle_list_screen.dart';
+import '../../features/chat/presentation/screens/conversations_screen.dart';
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../features/reviews/presentation/screens/user_reviews_screen.dart';
+import '../../features/campus/presentation/pages/campus_list_page.dart';
+import '../../features/formations/presentation/pages/formation_list_page.dart';
+import '../../features/levels/presentation/pages/academic_level_list_page.dart';
+import '../../features/universities/presentation/pages/university_list_page.dart';
+import '../../features/user_management/presentation/screens/user_management_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/auth',
+  redirect: (_, state) {
+    final location = state.matchedLocation;
+    final isAdminRoute = location.startsWith('/admin');
+    if (!isAdminRoute) return null;
+
+    final user = Injector.authProvider.user;
+    final isAdmin = (user?.role ?? 'student').toLowerCase() == 'admin';
+    if (user == null) return '/auth';
+    if (!isAdmin) return '/home';
+    return null;
+  },
   routes: [
-    // 1. Authentification & Profil
-    GoRoute(
-      path: '/auth',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Écran Authentification'))),
-    ),
-    GoRoute(
-      path: '/profile',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Écran Profil & Rôles'))),
-    ),
+    GoRoute(path: '/auth', builder: (_, __) => LoginScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/auth/register', builder: (_, __) => RegisterScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/auth/verify-student', builder: (_, __) => VerifyStudentScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/auth/verify-email', builder: (_, __) => EmailOtpScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/home', builder: (_, __) => AppDashboardScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/profile', builder: (_, __) => const Scaffold(body: Center(child: Text('Profil')))),
+    GoRoute(path: '/universities', builder: (_, __) => ChangeNotifierProvider(create: (_) => Injector.createUniversityProvider(), child: const UniversitySelectionScreen())),
 
-    // 2. Universités
-    GoRoute(
-      path: '/universities',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Universités'))),
-    ),
+    GoRoute(path: '/trips/publish', builder: (_, __) => const PublishTripScreen()),
+    GoRoute(path: '/trips/search', builder: (_, __) => const SearchTripsScreen()),
+    GoRoute(path: '/trips/history', builder: (_, __) => const TripHistoryScreen()),
+    GoRoute(path: '/trips', builder: (_, __) => const SearchTripsScreen()),
 
-    // 3. Véhicules
-    GoRoute(
-      path: '/vehicles',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Véhicules'))),
-    ),
+    GoRoute(path: '/bookings', builder: (_, __) => const MyBookingsScreen()),
+    GoRoute(path: '/vehicles', builder: (_, __) => const VehicleListScreen()),
+    GoRoute(path: '/chat', builder: (_, __) => const ConversationsScreen()),
+    GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
+    GoRoute(path: '/reviews', builder: (_, __) => const UserReviewsScreen()),
 
-    // 4. Trajets (Recherche, Création, Itinéraire)
-    GoRoute(
-      path: '/trips',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Trajets'))),
-    ),
-
-    // 5. Réservations
-    GoRoute(
-      path: '/bookings',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Réservations'))),
-    ),
-
-    // 6. Chat (Messagerie)
-    GoRoute(
-      path: '/chat',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Chat entre utilisateurs'))),
-    ),
-
-    // 7. Notifications
-    GoRoute(
-      path: '/notifications',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Centre de Notifications'))),
-    ),
-
-    // 8. Avis
-    GoRoute(
-      path: '/reviews',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Avis & Notes'))),
-    ),
-
-    // 9. Statistiques
-    GoRoute(
-      path: '/statistics',
-      builder: (context, state) => const Scaffold(
-        body: Center(child: Text('Tableau de bord Statistiques')),
-      ),
-    ),
+    GoRoute(path: '/admin/users', builder: (_, __) => const UserManagementScreen()),
+    GoRoute(path: '/admin/universities', builder: (_, __) => const UniversityListPage()),
+    GoRoute(path: '/admin/campuses', builder: (_, __) => const CampusListPage()),
+    GoRoute(path: '/admin/formations', builder: (_, __) => const FormationListPage()),
+    GoRoute(path: '/admin/levels', builder: (_, __) => const AcademicLevelListPage()),
+    GoRoute(path: '/statistics', builder: (_, __) => const Scaffold(body: Center(child: Text('Statistiques')))),
   ],
-  errorBuilder: (context, state) =>
-      Scaffold(body: Center(child: Text('Route introuvable : ${state.error}'))),
+  errorBuilder: (_, state) => Scaffold(body: Center(child: Text('Route introuvable : ${state.error}'))),
 );

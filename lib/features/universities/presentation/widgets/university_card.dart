@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/university_entity.dart';
+import '../../domain/entities/university.dart';
 
 class UniversityCard extends StatelessWidget {
-  final UniversityEntity university;
+  final University university;
   final VoidCallback? onTap;
 
   const UniversityCard({super.key, required this.university, this.onTap});
@@ -20,28 +20,46 @@ class UniversityCard extends StatelessWidget {
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
+              // Icône illustrative de l'université
               CircleAvatar(
                 radius: 24,
-                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                child: Icon(Icons.school, color: Theme.of(context).primaryColor),
+                backgroundColor: Theme.of(
+                  context,
+                ).primaryColor.withOpacity(0.1),
+                child: Icon(
+                  Icons.school,
+                  color: Theme.of(context).primaryColor,
+                ),
               ),
               const SizedBox(width: 16),
+
+              // Informations textuelles (Nom, Ville, Adresse)
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       university.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.location_city, size: 14, color: Colors.grey),
+                        const Icon(
+                          Icons.location_city,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           university.city,
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -53,7 +71,10 @@ class UniversityCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             university.address,
-                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 13,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -63,6 +84,8 @@ class UniversityCard extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // Flèche indicative d'action
               const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
             ],
           ),

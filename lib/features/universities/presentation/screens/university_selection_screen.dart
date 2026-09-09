@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../providers/university_provider.dart';
 import '../widgets/university_card.dart';
 

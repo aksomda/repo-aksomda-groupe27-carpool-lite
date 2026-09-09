@@ -6,6 +6,8 @@ abstract class AuthRepository {
     required String name,
     required String email,
     required String password,
+    required String phone,
+    required Sex sex,
     String? universityId,
     String? campusId,
   });
@@ -27,4 +29,10 @@ abstract class AuthRepository {
     required String uid,
     required String studentId,
   });
+
+  /// Envoie le lien de vérification natif de Firebase Authentication.
+  Future<void> sendEmailVerification();
+
+  /// Recharge l'utilisateur Firebase et retourne son état de vérification.
+  Future<bool> checkEmailVerification();
 }

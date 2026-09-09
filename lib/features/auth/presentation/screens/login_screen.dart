@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
 import '../widgets/auth_text_field.dart';
@@ -7,10 +8,7 @@ import 'register_screen.dart';
 class LoginScreen extends StatefulWidget {
   final AuthProvider authProvider;
 
-  const LoginScreen({
-    super.key,
-    required this.authProvider,
-  });
+  const LoginScreen({super.key, required this.authProvider});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -65,12 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const _LoginSuccessScreen(),
-        ),
-      );
+      context.go('/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -95,9 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return 'Veuillez entrer votre email.';
     }
 
-    final emailRegex = RegExp(
-      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-    );
+    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
     if (!emailRegex.hasMatch(email)) {
       return 'Veuillez entrer une adresse email valide.';
@@ -137,24 +128,17 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 30,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 450,
-              ),
+              constraints: const BoxConstraints(maxWidth: 450),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-
                     // ==================================================
                     // LOGO
                     // ==================================================
-
                     Center(
                       child: Container(
                         width: 90,
@@ -164,17 +148,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
-                              color: theme.colorScheme.primary
-                                  .withOpacity(0.25),
+                              color: theme.colorScheme.primary.withOpacity(
+                                0.25,
+                              ),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.directions_car_filled_rounded,
-                          size: 48,
-                          color: Colors.white,
+                        child: Image.asset(
+                          'assets/images/logo_carpoollite.png',
+                          height: 120, // Ajustez la taille selon vos besoins
+                          width: 120,
                         ),
                       ),
                     ),
@@ -184,7 +169,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     // ==================================================
                     // NOM APPLICATION
                     // ==================================================
-
                     const Text(
                       'CarPool Lite',
                       textAlign: TextAlign.center,
@@ -211,7 +195,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     // ==================================================
                     // CARD CONNEXION
                     // ==================================================
-
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -228,7 +211,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-
                           const Text(
                             'Bienvenue 👋',
                             style: TextStyle(
@@ -252,14 +234,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           // ==================================================
                           // EMAIL
                           // ==================================================
-
                           AuthTextField(
                             controller: _emailController,
                             label: 'Adresse email',
                             hint: 'exemple@email.com',
                             prefixIcon: Icons.email_outlined,
-                            keyboardType:
-                                TextInputType.emailAddress,
+                            keyboardType: TextInputType.emailAddress,
                             validator: _validateEmail,
                           ),
 
@@ -268,7 +248,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           // ==================================================
                           // MOT DE PASSE
                           // ==================================================
-
                           AuthTextField(
                             controller: _passwordController,
                             label: 'Mot de passe',
@@ -286,8 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               onPressed: () {
                                 setState(() {
-                                  _obscurePassword =
-                                      !_obscurePassword;
+                                  _obscurePassword = !_obscurePassword;
                                 });
                               },
                             ),
@@ -299,38 +277,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           // ==================================================
                           // SE SOUVENIR DE MOI
                           // ==================================================
-
                           Row(
                             children: [
                               Checkbox(
                                 value: _rememberMe,
                                 onChanged: (value) {
                                   setState(() {
-                                    _rememberMe =
-                                        value ?? false;
+                                    _rememberMe = value ?? false;
                                   });
                                 },
                               ),
-                              const Text(
-                                'Se souvenir de moi',
-                              ),
+                              const Text('Se souvenir de moi'),
                               const Spacer(),
                               TextButton(
                                 onPressed: () {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(
+                                  ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(
                                         'Fonctionnalité bientôt disponible.',
                                       ),
-                                      behavior:
-                                          SnackBarBehavior.floating,
+                                      behavior: SnackBarBehavior.floating,
                                     ),
                                   );
                                 },
-                                child: const Text(
-                                  'Mot de passe oublié ?',
-                                ),
+                                child: const Text('Mot de passe oublié ?'),
                               ),
                             ],
                           ),
@@ -340,36 +310,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           // ==================================================
                           // BOUTON CONNEXION
                           // ==================================================
-
                           AnimatedBuilder(
                             animation: widget.authProvider,
                             builder: (context, child) {
-                              final isLoading =
-                                  widget.authProvider.isLoading;
+                              final isLoading = widget.authProvider.isLoading;
 
                               return SizedBox(
                                 height: 54,
                                 child: ElevatedButton(
-                                  onPressed:
-                                      isLoading ? null : _login,
+                                  onPressed: isLoading ? null : _login,
                                   style: ElevatedButton.styleFrom(
                                     elevation: 0,
-                                    backgroundColor:
-                                        theme.colorScheme.primary,
+                                    backgroundColor: theme.colorScheme.primary,
                                     foregroundColor: Colors.white,
                                     disabledBackgroundColor:
                                         Colors.grey.shade300,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(14),
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
                                   ),
                                   child: isLoading
                                       ? const SizedBox(
                                           width: 24,
                                           height: 24,
-                                          child:
-                                              CircularProgressIndicator(
+                                          child: CircularProgressIndicator(
                                             strokeWidth: 2.5,
                                             color: Colors.white,
                                           ),
@@ -382,8 +346,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                               'Se connecter',
                                               style: TextStyle(
                                                 fontSize: 16,
-                                                fontWeight:
-                                                    FontWeight.bold,
+                                                fontWeight: FontWeight.bold,
                                               ),
                                             ),
                                             SizedBox(width: 10),
@@ -403,35 +366,27 @@ class _LoginScreenState extends State<LoginScreen> {
                           // ==================================================
                           // INSCRIPTION
                           // ==================================================
-
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 'Pas encore de compte ?',
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
-                                ),
+                                style: TextStyle(color: Colors.grey.shade700),
                               ),
                               TextButton(
                                 onPressed: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) =>
-                                          RegisterScreen(
-                                        authProvider:
-                                            widget.authProvider,
+                                      builder: (_) => RegisterScreen(
+                                        authProvider: widget.authProvider,
                                       ),
                                     ),
                                   );
                                 },
                                 child: const Text(
                                   'S’inscrire',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
@@ -445,10 +400,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     // ==================================================
                     // TEXTE DE SÉCURITÉ
                     // ==================================================
-
                     Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.lock_outline,
@@ -479,25 +432,3 @@ class _LoginScreenState extends State<LoginScreen> {
 // ================================================================
 // ÉCRAN TEMPORAIRE APRÈS CONNEXION
 // ================================================================
-
-class _LoginSuccessScreen extends StatelessWidget {
-  const _LoginSuccessScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('CarPool Lite'),
-      ),
-      body: const Center(
-        child: Text(
-          'Connexion réussie !',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-}

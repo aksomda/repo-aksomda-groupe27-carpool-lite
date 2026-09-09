@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_text_field.dart';
 import '../../domain/entities/user_entity.dart';
-import 'verify_student_screen.dart';
+import 'email_otp_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   final AuthProvider authProvider;
@@ -150,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => VerifyStudentScreen(
+          builder: (_) => EmailOtpScreen(
             authProvider: widget.authProvider,
           ),
         ),
@@ -361,6 +361,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildUniversityDropdown() {
     return DropdownButtonFormField<String>(
       value: _selectedUniversity,
+      // Contraint le texte sélectionné à l'espace disponible entre l'icône
+      // de gauche et la flèche. Sans cette option, DropdownButton conserve sa
+      // largeur intrinsèque et provoque un « right overflowed » sur mobile.
+      isExpanded: true,
       decoration: InputDecoration(
         labelText: 'Université',
         hintText: 'Sélectionnez votre université',
@@ -386,6 +390,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           value: university,
           child: Text(
             university,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         );
@@ -416,6 +421,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildCampusDropdown() {
     return DropdownButtonFormField<String>(
       value: _selectedCampus,
+      isExpanded: true,
       decoration: InputDecoration(
         labelText: 'Campus',
         hintText: 'Sélectionnez votre campus',
@@ -441,6 +447,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           value: campus,
           child: Text(
             campus,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         );

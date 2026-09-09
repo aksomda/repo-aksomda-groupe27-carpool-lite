@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/user_model.dart';
+import '../../domain/entities/user_entity.dart';
 
 class AuthRemoteDataSource {
   final FirebaseAuth firebaseAuth;
@@ -18,7 +19,7 @@ class AuthRemoteDataSource {
     required String email,
     required String password,
     required String phone,
-    required String sex,
+    required Sex sex,
     String? universityId,
     String? campusId,
   }) async {
@@ -48,6 +49,7 @@ class AuthRemoteDataSource {
         universityId: universityId,
         campusId: campusId,
         isVerified: false,
+        isActive: false,
         role: 'student',
       );
 
@@ -55,7 +57,12 @@ class AuthRemoteDataSource {
       await firestore
           .collection('users')
           .doc(firebaseUser.uid)
-          .set(user.toFirestore());
+          .set({
+        ...user.toFirestore(),
+        'emailVerified': false,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
 
       return user;
     } on FirebaseAuthException catch (e) {
@@ -96,8 +103,12 @@ class AuthRemoteDataSource {
           'Le profil utilisateur est introuvable.',
         );
       }
-
-      return UserModel.fromFirestore(document);
+      final user = UserModel.fromFirestore(document);
+      if (!user.isActive) {
+        await firebaseAuth.signOut();
+        throw Exception('Votre compte est en attente d’activation par un administrateur.');
+      }
+      return user;
     } on FirebaseAuthException catch (e) {
       throw Exception(_getAuthErrorMessage(e));
     }
@@ -173,6 +184,39 @@ class AuthRemoteDataSource {
     }
   }
 
+  /// Envoie le lien de vérification officiel de Firebase Authentication.
+  Future<void> sendEmailVerification() async {
+    try {
+      final user = firebaseAuth.currentUser;
+      if (user == null) {
+        throw Exception('Aucun utilisateur connecté.');
+      }
+      await user.sendEmailVerification();
+    } on FirebaseAuthException catch (e) {
+      throw Exception(_getAuthErrorMessage(e));
+    }
+  }
+
+  /// Actualise l'utilisateur après l'ouverture du lien reçu par e-mail.
+  Future<bool> checkEmailVerification() async {
+    try {
+      final user = firebaseAuth.currentUser;
+      if (user == null) return false;
+
+      await user.reload();
+      final refreshedUser = firebaseAuth.currentUser;
+      if (refreshedUser == null || !refreshedUser.emailVerified) return false;
+
+      await firestore.collection('users').doc(refreshedUser.uid).update({
+        'emailVerified': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } on FirebaseAuthException catch (e) {
+      throw Exception(_getAuthErrorMessage(e));
+    }
+  }
+
   /// Messages d'erreur Firebase Authentication
   String _getAuthErrorMessage(FirebaseAuthException e) {
     switch (e.code) {
@@ -201,8 +245,21 @@ class AuthRemoteDataSource {
       case 'network-request-failed':
         return 'Problème de connexion Internet.';
 
+      case 'operation-not-allowed':
+      case 'configuration-not-found':
+        return 'La connexion par email et mot de passe n’est pas encore '
+            'activée dans Firebase Authentication pour le projet carpoollite.';
+
+      case 'app-not-authorized':
+      case 'invalid-api-key':
+      case 'api-key-not-valid':
+        return 'La configuration Firebase de l’application est invalide ou '
+            'n’est pas autorisée pour ce projet.';
+
       default:
-        return 'Une erreur d’authentification est survenue.';
+        // Le code Firebase aide à diagnostiquer une configuration incomplète
+        // sans afficher de données sensibles à l’utilisateur.
+        return 'Erreur d’authentification Firebase (${e.code}).';
     }
   }
 }
