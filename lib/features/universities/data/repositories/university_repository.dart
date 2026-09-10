@@ -43,4 +43,12 @@ class UniversityRepository {
       await _local.createUniversity(university);
     }
   }
+
+  Future<void> updateUniversity(UniversityModel university) async {
+    if (_remote != null) {
+      await _remote!.updateUniversity(university);
+    } else {
+      await _local.updateUniversity(university);
+    }
+  }
 }

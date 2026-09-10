@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/app_drawer.dart';
 import '../../data/models/university_model.dart';
 import '../../data/repositories/university_repository.dart';
 import '../widgets/university_card.dart';
+import 'add_edit_university_page.dart';
 import 'university_detail_page.dart';
 
 /// Écran principal de la gestion des universités : affiche la liste des
@@ -80,13 +80,22 @@ class UniversityListPage extends StatelessWidget {
                     ),
                   );
                 },
+                onEdit: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AddEditUniversityPage(existing: university),
+                    ),
+                  );
+                },
               );
             },
           );
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/universities/add'),
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AddEditUniversityPage()),
+        ),
         icon: const Icon(Icons.add),
         label: const Text('Ajouter'),
       ),

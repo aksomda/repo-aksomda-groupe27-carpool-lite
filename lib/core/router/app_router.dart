@@ -1,111 +1,70 @@
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../../features/universities/presentation/pages/add_university_page.dart';
-import '../../features/universities/presentation/pages/university_list_page.dart';
+import '../di/injector.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/verify_student_screen.dart';
+import '../../features/auth/presentation/screens/email_otp_screen.dart';
+import '../../features/universities/presentation/screens/university_selection_screen.dart';
+import '../../features/navigation/presentation/screens/app_dashboard_screen.dart';
+import '../../features/trips/presentation/screens/publish_trip_screen.dart';
+import '../../features/trips/presentation/screens/search_trips_screen.dart';
+import '../../features/trips/presentation/screens/trip_history_screen.dart';
+import '../../features/bookings/presentation/screens/my_bookings_screen.dart';
+import '../../features/vehicles/presentation/screens/vehicle_list_screen.dart';
+import '../../features/chat/presentation/screens/conversations_screen.dart';
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../features/reviews/presentation/screens/user_reviews_screen.dart';
 import '../../features/campus/presentation/pages/campus_list_page.dart';
-import '../../features/ufrs/presentation/pages/ufr_list_page.dart';
 import '../../features/formations/presentation/pages/formation_list_page.dart';
 import '../../features/levels/presentation/pages/academic_level_list_page.dart';
+import '../../features/ufrs/presentation/pages/ufr_list_page.dart';
+import '../../features/universities/presentation/pages/university_list_page.dart';
+import '../../features/user_management/presentation/screens/user_management_screen.dart';
 
 final GoRouter appRouter = GoRouter(
-  // Route de démarrage temporairement pointée sur la gestion des
-  // universités pour faciliter les tests graphiques de cette fonctionnalité.
-  // Remettez '/auth' une fois l'écran d'authentification implémenté.
-  initialLocation: '/universities',
+  initialLocation: '/auth',
+  redirect: (_, state) {
+    final location = state.matchedLocation;
+    final isAdminRoute = location.startsWith('/admin');
+    if (!isAdminRoute) return null;
+
+    final user = Injector.authProvider.user;
+    final isAdmin = (user?.role ?? 'student').toLowerCase() == 'admin';
+    if (user == null) return '/auth';
+    if (!isAdmin) return '/home';
+    return null;
+  },
   routes: [
-    // 1. Authentification & Profil
-    GoRoute(
-      path: '/auth',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Écran Authentification'))),
-    ),
-    GoRoute(
-      path: '/profile',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Écran Profil & Rôles'))),
-    ),
+    GoRoute(path: '/auth', builder: (_, _) => LoginScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/auth/register', builder: (_, _) => RegisterScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/auth/verify-student', builder: (_, _) => VerifyStudentScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/auth/verify-email', builder: (_, _) => EmailOtpScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/home', builder: (_, _) => AppDashboardScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/profile', builder: (_, _) => const Scaffold(body: Center(child: Text('Profil')))),
+    GoRoute(path: '/universities', builder: (_, _) => ChangeNotifierProvider(create: (_) => Injector.createUniversityProvider(), child: const UniversitySelectionScreen())),
 
-    // 2. Universités
-    GoRoute(
-      path: '/universities',
-      builder: (context, state) => const UniversityListPage(),
-      routes: [
-        GoRoute(
-          path: 'add',
-          builder: (context, state) => const AddUniversityPage(),
-        ),
-      ],
-    ),
+    GoRoute(path: '/trips/publish', builder: (_, _) => const PublishTripScreen()),
+    GoRoute(path: '/trips/search', builder: (_, _) => const SearchTripsScreen()),
+    GoRoute(path: '/trips/history', builder: (_, _) => const TripHistoryScreen()),
+    GoRoute(path: '/trips', builder: (_, _) => const SearchTripsScreen()),
 
-    // 2.4 Gestion académique : Campus, UFRs, Formations, Niveaux/Classes
-    GoRoute(
-      path: '/campus',
-      builder: (context, state) => const CampusListPage(),
-    ),
-    GoRoute(
-      path: '/ufrs',
-      builder: (context, state) => const UfrListPage(),
-    ),
-    GoRoute(
-      path: '/formations',
-      builder: (context, state) => const FormationListPage(),
-    ),
-    GoRoute(
-      path: '/levels',
-      builder: (context, state) => const AcademicLevelListPage(),
-    ),
+    GoRoute(path: '/bookings', builder: (_, _) => const MyBookingsScreen()),
+    GoRoute(path: '/vehicles', builder: (_, _) => const VehicleListScreen()),
+    GoRoute(path: '/chat', builder: (_, _) => const ConversationsScreen()),
+    GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
+    GoRoute(path: '/reviews', builder: (_, _) => const UserReviewsScreen()),
 
-    // 3. Véhicules
-    GoRoute(
-      path: '/vehicles',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Véhicules'))),
-    ),
-
-    // 4. Trajets (Recherche, Création, Itinéraire)
-    GoRoute(
-      path: '/trips',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Trajets'))),
-    ),
-
-    // 5. Réservations
-    GoRoute(
-      path: '/bookings',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Réservations'))),
-    ),
-
-    // 6. Chat (Messagerie)
-    GoRoute(
-      path: '/chat',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Chat entre utilisateurs'))),
-    ),
-
-    // 7. Notifications
-    GoRoute(
-      path: '/notifications',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Centre de Notifications'))),
-    ),
-
-    // 8. Avis
-    GoRoute(
-      path: '/reviews',
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Gestion des Avis & Notes'))),
-    ),
-
-    // 9. Statistiques
-    GoRoute(
-      path: '/statistics',
-      builder: (context, state) => const Scaffold(
-        body: Center(child: Text('Tableau de bord Statistiques')),
-      ),
-    ),
+    GoRoute(path: '/admin/users', builder: (_, _) => const UserManagementScreen()),
+    GoRoute(path: '/admin/universities', builder: (_, _) => const UniversityListPage()),
+    GoRoute(path: '/admin/campuses', builder: (_, _) => const CampusListPage()),
+    GoRoute(path: '/admin/formations', builder: (_, _) => const FormationListPage()),
+    GoRoute(path: '/admin/levels', builder: (_, _) => const AcademicLevelListPage()),
+    GoRoute(path: '/admin/ufrs', builder: (_, _) => const UfrListPage()),
+    GoRoute(path: '/statistics', builder: (_, _) => const Scaffold(body: Center(child: Text('Statistiques')))),
   ],
-  errorBuilder: (context, state) =>
-      Scaffold(body: Center(child: Text('Route introuvable : ${state.error}'))),
+  errorBuilder: (_, state) => Scaffold(body: Center(child: Text('Route introuvable : ${state.error}'))),
 );

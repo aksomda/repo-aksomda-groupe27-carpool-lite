@@ -141,7 +141,7 @@ class _AddEditAcademicLevelPageState extends State<AddEditAcademicLevelPage> {
                   }
 
                   return DropdownButtonFormField<String>(
-                    value: _selectedFormationId,
+                    initialValue: _selectedFormationId,
                     decoration: const InputDecoration(
                       labelText: 'Formation de rattachement',
                       border: OutlineInputBorder(),

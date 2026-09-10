@@ -22,7 +22,7 @@ class UfrCard extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
           child: Icon(Icons.account_balance, color: Theme.of(context).primaryColor),
         ),
         title: Text(ufr.name, style: const TextStyle(fontWeight: FontWeight.bold)),

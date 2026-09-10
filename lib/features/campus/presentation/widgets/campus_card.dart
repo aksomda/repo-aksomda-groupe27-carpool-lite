@@ -22,7 +22,7 @@ class CampusCard extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
           child: Icon(Icons.apartment, color: Theme.of(context).primaryColor),
         ),
         title: Text(campus.name, style: const TextStyle(fontWeight: FontWeight.bold)),

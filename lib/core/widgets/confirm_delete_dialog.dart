@@ -1,28 +1,24 @@
 import 'package:flutter/material.dart';
 
-/// Affiche une confirmation avant une suppression logique et retourne
-/// `true` si l'utilisateur confirme.
-Future<bool> confirmSoftDelete(BuildContext context, String itemLabel) async {
-  final confirmed = await showDialog<bool>(
+/// Demande confirmation avant une suppression logique.
+Future<bool> confirmSoftDelete(BuildContext context, String itemName) async {
+  final result = await showDialog<bool>(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (dialogContext) => AlertDialog(
       title: const Text('Confirmer la suppression'),
-      content: Text(
-        'Voulez-vous vraiment supprimer "$itemLabel" ?\n'
-        "L'élément ne sera plus visible mais restera archivé en base.",
-      ),
+      content: Text('Voulez-vous vraiment supprimer « $itemName » ?'),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
+          onPressed: () => Navigator.of(dialogContext).pop(false),
           child: const Text('Annuler'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: Colors.red),
-          onPressed: () => Navigator.of(context).pop(true),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
           child: const Text('Supprimer'),
         ),
       ],
     ),
   );
-  return confirmed ?? false;
+
+  return result ?? false;
 }
