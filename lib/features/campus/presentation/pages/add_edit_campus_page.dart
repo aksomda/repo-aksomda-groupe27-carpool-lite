@@ -138,7 +138,7 @@ class _AddEditCampusPageState extends State<AddEditCampusPage> {
                   }
 
                   return DropdownButtonFormField<String>(
-                    value: _selectedUniversityId,
+                    initialValue: _selectedUniversityId,
                     decoration: const InputDecoration(
                       labelText: 'Université de rattachement',
                       border: OutlineInputBorder(),

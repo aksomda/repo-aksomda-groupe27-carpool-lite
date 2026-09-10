@@ -3,24 +3,42 @@ import 'package:flutter/material.dart';
 import '../../data/models/university_model.dart';
 import '../../data/repositories/university_repository.dart';
 
-/// Écran de formulaire pour ajouter une nouvelle université.
-class AddUniversityPage extends StatefulWidget {
-  const AddUniversityPage({super.key});
+/// Formulaire unique pour la création et la modification d'une université.
+///
+/// Passer [existing] bascule l'écran en mode modification (formulaire
+/// pré-rempli, appel à [UniversityRepository.updateUniversity]) ; le laisser
+/// à `null` garde le comportement d'ajout classique.
+class AddEditUniversityPage extends StatefulWidget {
+  const AddEditUniversityPage({super.key, this.existing});
+
+  final UniversityModel? existing;
 
   @override
-  State<AddUniversityPage> createState() => _AddUniversityPageState();
+  State<AddEditUniversityPage> createState() => _AddEditUniversityPageState();
 }
 
-class _AddUniversityPageState extends State<AddUniversityPage> {
+class _AddEditUniversityPageState extends State<AddEditUniversityPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final _nameController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _latitudeController = TextEditingController();
-  final _longitudeController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _cityController;
+  late final TextEditingController _addressController;
+  late final TextEditingController _latitudeController;
+  late final TextEditingController _longitudeController;
 
   bool _isSaving = false;
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.existing?.name ?? '');
+    _cityController = TextEditingController(text: widget.existing?.city ?? '');
+    _addressController = TextEditingController(text: widget.existing?.address ?? '');
+    _latitudeController = TextEditingController(text: widget.existing?.latitude ?? '');
+    _longitudeController = TextEditingController(text: widget.existing?.longitude ?? '');
+  }
 
   @override
   void dispose() {
@@ -44,20 +62,33 @@ class _AddUniversityPageState extends State<AddUniversityPage> {
 
     setState(() => _isSaving = true);
 
-    final university = UniversityModel(
-      id: '',
-      name: _nameController.text.trim(),
-      city: _cityController.text.trim(),
-      address: _addressController.text.trim(),
-      latitude: _latitudeController.text.trim(),
-      longitude: _longitudeController.text.trim(),
-    );
-
     try {
-      await UniversityRepository.instance.createUniversity(university);
+      if (_isEditing) {
+        final updated = UniversityModel(
+          id: widget.existing!.id,
+          name: _nameController.text.trim(),
+          city: _cityController.text.trim(),
+          address: _addressController.text.trim(),
+          latitude: _latitudeController.text.trim(),
+          longitude: _longitudeController.text.trim(),
+        );
+        await UniversityRepository.instance.updateUniversity(updated);
+      } else {
+        final created = UniversityModel(
+          id: '',
+          name: _nameController.text.trim(),
+          city: _cityController.text.trim(),
+          address: _addressController.text.trim(),
+          latitude: _latitudeController.text.trim(),
+          longitude: _longitudeController.text.trim(),
+        );
+        await UniversityRepository.instance.createUniversity(created);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Université ajoutée avec succès.')),
+        SnackBar(
+          content: Text(_isEditing ? 'Université modifiée.' : 'Université ajoutée.'),
+        ),
       );
       Navigator.of(context).pop();
     } catch (e) {
@@ -73,7 +104,9 @@ class _AddUniversityPageState extends State<AddUniversityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ajouter une université')),
+      appBar: AppBar(
+        title: Text(_isEditing ? "Modifier l'université" : 'Ajouter une université'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(

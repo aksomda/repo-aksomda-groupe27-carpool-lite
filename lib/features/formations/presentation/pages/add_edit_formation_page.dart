@@ -136,7 +136,7 @@ class _AddEditFormationPageState extends State<AddEditFormationPage> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _selectedDiploma,
+                initialValue: _selectedDiploma,
                 decoration: const InputDecoration(
                   labelText: 'Type de diplôme',
                   border: OutlineInputBorder(),
@@ -162,7 +162,7 @@ class _AddEditFormationPageState extends State<AddEditFormationPage> {
                   }
 
                   return DropdownButtonFormField<String>(
-                    value: _selectedUfrId,
+                    initialValue: _selectedUfrId,
                     decoration: const InputDecoration(
                       labelText: 'UFR de rattachement',
                       border: OutlineInputBorder(),

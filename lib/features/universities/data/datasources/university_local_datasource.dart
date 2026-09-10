@@ -56,4 +56,12 @@ class UniversityLocalDataSource {
     _universities.add(withId);
     _controller.add(List.unmodifiable(_universities));
   }
+
+  Future<void> updateUniversity(UniversityModel university) async {
+    final index = _universities.indexWhere((u) => u.id == university.id);
+    if (index != -1) {
+      _universities[index] = university;
+      _controller.add(List.unmodifiable(_universities));
+    }
+  }
 }

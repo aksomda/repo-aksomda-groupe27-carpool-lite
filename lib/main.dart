@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -25,6 +26,19 @@ void main() {
         await Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
         );
+
+        // Active le cache local (IndexedDB sur le web, SQLite sur
+        // mobile/desktop) : une fois une collection lue au moins une fois,
+        // les lectures suivantes peuvent être servies depuis ce cache si le
+        // réseau est temporairement indisponible, au lieu d'attendre le
+        // délai complet puis d'échouer. Ne compense pas une base Firestore
+        // jamais créée ni des règles qui bloquent la lecture (voir
+        // DEPANNAGE_FIRESTORE.md) : uniquement les coupures réseau
+        // transitoires une fois qu'une première lecture a réussi.
+        FirebaseFirestore.instance.settings = const Settings(
+          persistenceEnabled: true,
+        );
+
         FirebaseStatus.markAvailable();
 
         runApp(const CarpoolLiteApp());

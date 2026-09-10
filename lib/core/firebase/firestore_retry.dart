@@ -6,7 +6,7 @@ class FirestoreRetry {
 
   static Future<T> run<T>(
     Future<T> Function() operation, {
-    int maxAttempts = 3,
+    int maxAttempts = 100,
   }) async {
     Object? lastError;
     StackTrace? lastStackTrace;
@@ -28,7 +28,7 @@ class FirestoreRetry {
 
   static Stream<T> runStream<T>(
     Stream<T> Function() operation, {
-    int maxAttempts = 5,
+    int maxAttempts = 100,
   }) async* {
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {

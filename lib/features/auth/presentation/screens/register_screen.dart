@@ -310,7 +310,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildSexDropdown() {
     return DropdownButtonFormField<Sex>(
-      value: _selectedSex,
+      initialValue: _selectedSex,
       decoration: InputDecoration(
         labelText: 'Sexe',
         hintText: 'Sélectionnez votre sexe',
@@ -360,7 +360,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildUniversityDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedUniversity,
+      initialValue: _selectedUniversity,
       // Contraint le texte sélectionné à l'espace disponible entre l'icône
       // de gauche et la flèche. Sans cette option, DropdownButton conserve sa
       // largeur intrinsèque et provoque un « right overflowed » sur mobile.
@@ -420,7 +420,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildCampusDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedCampus,
+      initialValue: _selectedCampus,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: 'Campus',
@@ -543,7 +543,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               color: theme
                                   .colorScheme
                                   .primary
-                                  .withOpacity(0.25),
+                                  .withValues(alpha: 0.25),
                               blurRadius: 20,
                               offset: const Offset(0, 9),
                             ),
@@ -624,7 +624,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         boxShadow: [
                           BoxShadow(
                             color:
-                                Colors.black.withOpacity(0.06),
+                                Colors.black.withValues(alpha: 0.06),
                             blurRadius: 25,
                             offset: const Offset(0, 8),
                           ),

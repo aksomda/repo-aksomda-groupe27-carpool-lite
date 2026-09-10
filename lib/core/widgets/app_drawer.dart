@@ -23,7 +23,9 @@ class AppDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text(user?.name.isNotEmpty == true ? user!.name : 'Utilisateur'),
+              accountName: Text(
+                user?.name.isNotEmpty == true ? user!.name : 'Utilisateur',
+              ),
               accountEmail: Text(user?.email ?? ''),
               currentAccountPicture: const CircleAvatar(
                 child: Icon(Icons.person),
@@ -35,15 +37,40 @@ class AppDrawer extends StatelessWidget {
               leading: const Icon(Icons.route_outlined),
               title: const Text('Trajet'),
               children: [
-                _subItem(context, Icons.add_road, 'Publication', '/trips/publish'),
+                _subItem(
+                  context,
+                  Icons.add_road,
+                  'Publication',
+                  '/trips/publish',
+                ),
                 _subItem(context, Icons.search, 'Recherche', '/trips/search'),
-                _subItem(context, Icons.history, 'Historique', '/trips/history'),
+                _subItem(
+                  context,
+                  Icons.history,
+                  'Historique',
+                  '/trips/history',
+                ),
                 _subItem(context, Icons.star_outline, 'Évaluation', '/reviews'),
               ],
             ),
-            _item(context, Icons.event_seat_outlined, 'Reservation', '/bookings'),
-            _item(context, Icons.directions_car_outlined, 'Véhicule', '/vehicles'),
-            _item(context, Icons.notifications_none, 'Notification', '/notifications'),
+            _item(
+              context,
+              Icons.event_seat_outlined,
+              'Reservation',
+              '/bookings',
+            ),
+            _item(
+              context,
+              Icons.directions_car_outlined,
+              'Véhicule',
+              '/vehicles',
+            ),
+            _item(
+              context,
+              Icons.notifications_none,
+              'Notification',
+              '/notifications',
+            ),
             _item(context, Icons.chat_bubble_outline, 'Chat', '/chat'),
             if (isAdmin) ...[
               const Divider(),
@@ -54,11 +81,42 @@ class AppDrawer extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
-              _item(context, Icons.people_alt_outlined, 'Gestion des users', '/admin/users'),
-              _item(context, Icons.account_balance_outlined, 'Gestion des universities', '/admin/universities'),
-              _item(context, Icons.location_city_outlined, 'Gestion des campus', '/admin/campuses'),
-              _item(context, Icons.school_outlined, 'Gestion des formations', '/admin/formations'),
-              _item(context, Icons.layers_outlined, 'Gestion des levels', '/admin/levels'),
+              _item(
+                context,
+                Icons.people_alt_outlined,
+                'Gestion des users',
+                '/admin/users',
+              ),
+              _item(
+                context,
+                Icons.account_balance_outlined,
+                'Gestion des universities',
+                '/admin/universities',
+              ),
+              _item(
+                context,
+                Icons.location_city_outlined,
+                'Gestion des campus',
+                '/admin/campuses',
+              ),
+              _item(
+                context,
+                Icons.school_outlined,
+                'Gestion des formations',
+                '/admin/formations',
+              ),
+              _item(
+                context,
+                Icons.layers_outlined,
+                'Gestion des levels',
+                '/admin/levels',
+              ),
+              _item(
+                context,
+                Icons.account_tree_outlined,
+                'Gestion des unités de formations et de recherches (UFRs)',
+                '/admin/ufrs',
+              ),
             ],
             const Divider(),
             ListTile(
@@ -76,7 +134,12 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _item(BuildContext context, IconData icon, String label, String route) {
+  Widget _item(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String route,
+  ) {
     return ListTile(
       leading: Icon(icon),
       title: Text(label),
@@ -87,7 +150,12 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _subItem(BuildContext context, IconData icon, String label, String route) {
+  Widget _subItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String route,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(left: 24),
       child: _item(context, icon, label, route),

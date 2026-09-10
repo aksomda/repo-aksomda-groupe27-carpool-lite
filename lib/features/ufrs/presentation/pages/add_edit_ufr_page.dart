@@ -138,7 +138,7 @@ class _AddEditUfrPageState extends State<AddEditUfrPage> {
                   }
 
                   return DropdownButtonFormField<String>(
-                    value: _selectedCampusId,
+                    initialValue: _selectedCampusId,
                     decoration: const InputDecoration(
                       labelText: 'Campus de rattachement',
                       border: OutlineInputBorder(),
