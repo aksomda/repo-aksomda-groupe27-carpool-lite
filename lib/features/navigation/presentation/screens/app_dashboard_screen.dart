@@ -1,8 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
+import 'home_screen.dart';
 
 class AppDashboardScreen extends StatelessWidget {
   final AuthProvider authProvider;
@@ -12,10 +12,18 @@ class AppDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // L'accueil "étudiant" suit désormais fidèlement la maquette
+    // (CarPool_Lite.pdf) : voir HomeScreen. Le tableau de bord
+    // administrateur (drawer + grille) reste inchangé, la maquette ne
+    // couvrant pas cet espace pour le moment.
+    if (!isAdmin) {
+      return HomeScreen(authProvider: authProvider);
+    }
+
     final user = authProvider.user;
     return Scaffold(
       appBar: AppBar(
-        title: Text(isAdmin ? 'CarPool Lite — Administration' : 'CarPool Lite'),
+        title: const Text('CarPool Lite — Administration'),
         actions: [
           IconButton(
             tooltip: 'Déconnexion',
