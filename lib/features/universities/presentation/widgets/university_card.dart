@@ -4,8 +4,9 @@ import '../../domain/entities/university.dart';
 class UniversityCard extends StatelessWidget {
   final University university;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
 
-  const UniversityCard({super.key, required this.university, this.onTap});
+  const UniversityCard({super.key, required this.university, this.onTap, this.onEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +26,7 @@ class UniversityCard extends StatelessWidget {
                 radius: 24,
                 backgroundColor: Theme.of(
                   context,
-                ).primaryColor.withOpacity(0.1),
+                ).primaryColor.withValues(alpha: 0.1),
                 child: Icon(
                   Icons.school,
                   color: Theme.of(context).primaryColor,
@@ -85,7 +86,12 @@ class UniversityCard extends StatelessWidget {
                 ),
               ),
 
-              // Flèche indicative d'action
+              // Bouton de modification, puis flèche indicative vers le détail
+              if (onEdit != null)
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 20),
+                  onPressed: onEdit,
+                ),
               const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
             ],
           ),

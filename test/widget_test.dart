@@ -1,30 +1,30 @@
-// This is a basic Flutter widget test.
+// Test de fumée minimal.
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+// Le test par défaut généré par Flutter (qui référence une classe `MyApp`
+// avec un compteur) ne correspond pas à cette application : l'app réelle
+// s'appelle `CarpoolLiteApp` (voir lib/main.dart) et ne contient pas de
+// compteur.
+//
+// `CarpoolLiteApp` n'est volontairement pas testée ici directement : son
+// arbre de routes (`app_router.dart`) construit `Injector.authProvider`,
+// qui appelle `FirebaseAuth.instance` / `FirebaseFirestore.instance` dès son
+// chargement. Sans `Firebase.initializeApp()` (ou un mock, ex. via les
+// packages `firebase_auth_mocks` / `fake_cloud_firestore`, non installés
+// dans ce dépôt), ce test échouerait à l'exécution alors même que le code
+// est correct. À enrichir une fois ces mocks ajoutés au projet.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:repo_aksomda_groupe27_carpool_lite/main.dart';
-
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Affiche un écran de base', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(child: Text('Carpool Lite')),
+        ),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Carpool Lite'), findsOneWidget);
   });
 }
