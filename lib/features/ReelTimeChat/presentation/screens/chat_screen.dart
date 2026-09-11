@@ -220,18 +220,8 @@ class _ChatDetailScreenState
                 }
 
                 return ListView.builder(
-                  // IMPORTANT :
-                  // Le bas de la liste correspond à index 0.
-                  //
-                  // Notre Repository renvoie déjà :
-                  //
-                  // messages[0] = plus récent
-                  // messages[1] = précédent
-                  // messages[2] = précédent
-                  //
-                  // Donc on ne renverse PAS manuellement la liste.
 
-                  reverse: true,
+                  reverse: false,
 
                   padding: const EdgeInsets.symmetric(
                     vertical: 12,

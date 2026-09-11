@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/repositories_impl/chat_repository_mock.dart';
+import '../../data/datasources/firebase_chat_datasource.dart';
+import '../../data/repositories_impl/chat_repository_impl.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../../domain/usecases/get_messages.dart';
@@ -8,17 +9,43 @@ import '../../domain/usecases/get_user_messages.dart';
 import '../../domain/usecases/mark_messages_as_read.dart';
 import '../../domain/usecases/send_message.dart';
 
+// // ============================================================
+// // REPOSITORY MOCK
+// // ============================================================
+//
+// final chatRepositoryProvider = Provider<ChatRepository>((ref) {
+//   final repository = ChatRepositoryMock();
+//
+//   ref.onDispose(repository.dispose);
+//
+//   return repository;
+// });
+
 // ============================================================
-// REPOSITORY MOCK
+// FIREBASE DATA SOURCE
 // ============================================================
 
-final chatRepositoryProvider = Provider<ChatRepository>((ref) {
-  final repository = ChatRepositoryMock();
-
-  ref.onDispose(repository.dispose);
-
-  return repository;
+final firebaseChatDataSourceProvider =
+Provider<FirebaseChatDataSource>((ref) {
+  return FirebaseChatDataSource();
 });
+
+
+// ============================================================
+// REPOSITORY FIREBASE
+// ============================================================
+
+final chatRepositoryProvider =
+Provider<ChatRepository>((ref) {
+
+  final dataSource =
+  ref.watch(firebaseChatDataSourceProvider);
+
+  return ChatRepositoryImpl(
+    dataSource: dataSource,
+  );
+});
+
 
 
 // ============================================================

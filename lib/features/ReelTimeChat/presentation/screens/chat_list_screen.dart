@@ -111,8 +111,8 @@ class _ChatListScreenState
                 children: [
 
                   Image.asset(
-                    'assets/logo.png',
-                    width: 105,
+                    'assets/CarPoolLite_logo_sn.png',
+                    width: 155,
                   ),
 
                   const Spacer(),
