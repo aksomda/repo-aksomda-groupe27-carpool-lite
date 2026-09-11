@@ -6,4 +6,4 @@ router.get('/universities', universityController.getUniversities);
 router.post('/universities/save', universityController.saveUniversity);
 router.post('/universities/delete', universityController.deleteUniversity);
 
-exports.universityRoutes = router;
+module.exports = router;

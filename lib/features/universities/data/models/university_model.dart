@@ -18,8 +18,10 @@ class UniversityModel extends University {
       id: doc.id,
       name: data['name'] ?? '',
       city: data['city'] ?? '',
-      latitude: (data['latitude'] ?? 0.0).toDouble(),
-      longitude: (data['longitude'] ?? 0.0).toDouble(),
+      // .toString() gère aussi bien d'anciens documents où lat/long auraient
+      // été enregistrés en nombre que le nouveau format texte libre.
+      latitude: (data['latitude'] ?? '').toString(),
+      longitude: (data['longitude'] ?? '').toString(),
       address: data['address'] ?? '',
     );
   }
