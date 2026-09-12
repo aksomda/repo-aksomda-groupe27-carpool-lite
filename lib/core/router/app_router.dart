@@ -5,11 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/presentation/screens/chat_list_screen.dart';
 
+import '../../features/navigation/presentation/screens/home_screen.dart';
 import '../di/injector.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/verify_student_screen.dart';
-import '../../features/auth/presentation/screens/email_otp_screen.dart';
 import '../../features/universities/presentation/screens/university_selection_screen.dart';
 import '../../features/navigation/presentation/screens/app_dashboard_screen.dart';
 import '../../features/trips/presentation/screens/publish_trip_screen.dart';
@@ -43,7 +43,8 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/auth', builder: (_, _) => LoginScreen(authProvider: Injector.authProvider)),
     GoRoute(path: '/auth/register', builder: (_, _) => RegisterScreen(authProvider: Injector.authProvider)),
     GoRoute(path: '/auth/verify-student', builder: (_, _) => VerifyStudentScreen(authProvider: Injector.authProvider)),
-    GoRoute(path: '/auth/verify-email', builder: (_, _) => EmailOtpScreen(authProvider: Injector.authProvider)),
+    //GoRoute(path: '/auth/verify-email', builder: (_, _) => EmailOtpScreen(authProvider: Injector.authProvider)),
+    GoRoute(path: '/home', builder: (_, _) => HomeScreen(authProvider: Injector.authProvider)),
     GoRoute(path: '/home', builder: (_, _) => AppDashboardScreen(authProvider: Injector.authProvider)),
     GoRoute(path: '/profile', builder: (_, _) => const Scaffold(body: Center(child: Text('Profil')))),
     GoRoute(path: '/universities', builder: (_, _) => ChangeNotifierProvider(create: (_) => Injector.createUniversityProvider(), child: const UniversitySelectionScreen())),

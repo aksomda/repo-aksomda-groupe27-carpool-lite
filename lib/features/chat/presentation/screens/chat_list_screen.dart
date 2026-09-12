@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../navigation/presentation/widgets/bottom_navigation.dart';
 import '../../domain/entities/message.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/conversationcard.dart';
-import '../widgets/navbar.dart';
 import 'chat_screen.dart';
 
 class ChatListScreen
@@ -426,8 +426,11 @@ class _ChatListScreenState
       // BOTTOM NAVIGATION
       // =====================================================
 
+
       bottomNavigationBar:
-      MaBottomNavigationBar(),
+      HomeBottomNavigation(
+        currentIndex: 3,
+      ),
     );
   }
 }
