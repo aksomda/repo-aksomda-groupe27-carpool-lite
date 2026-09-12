@@ -17,6 +17,24 @@ import '../../features/universities/domain/usecases/get_universities_usecase.dar
 import '../../features/universities/domain/usecases/add_university_usecase.dart';
 import '../../features/universities/presentation/providers/university_provider.dart';
 
+import '../../features/reviews/data/datasources/review_remote_datasource.dart';
+import '../../features/reviews/data/repositories/review_repository_impl.dart';
+import '../../features/reviews/domain/usecases/create_review.dart';
+import '../../features/reviews/domain/usecases/get_reviews_for_user_usecase.dart';
+import '../../features/reviews/presentation/providers/review_provider.dart';
+
+import '../../features/statistics/data/datasources/statistics_remote_datasource.dart';
+import '../../features/statistics/data/repositories/statistics_repository_impl.dart';
+import '../../features/statistics/domain/usecases/get_driver_statistics.dart';
+import '../../features/statistics/domain/usecases/get_university_statistics.dart';
+import '../../features/statistics/presentation/providers/statistics_provider.dart';
+
+import '../../features/profile/data/datasources/profile_remote_datasource.dart';
+import '../../features/profile/data/repositories/profile_repository_impl.dart';
+import '../../features/profile/domain/usecases/get_profile_usecase.dart';
+import '../../features/profile/domain/usecases/update_profile_usecase.dart';
+import '../../features/profile/presentation/providers/profile_provider.dart';
+
 
 /// Point unique de câblage manuel des dépendances (pas d'injection de code
 /// généré : on construit ici, une seule fois, les datasources → repository
@@ -51,6 +69,37 @@ class Injector {
     return UniversityProvider(
       getUniversitiesUseCase: GetUniversitiesUseCase(repository),
       addUniversityUseCase: AddUniversityUseCase(repository),
+    );
+  }
+
+  static ReviewProvider createReviewProvider() {
+    final repository = ReviewRepositoryImpl(
+      remoteDataSource: ReviewRemoteDataSource(FirebaseFirestore.instance),
+    );
+    return ReviewProvider(
+      createReviewUseCase: CreateReview(repository),
+      getReviewsForUserUseCase: GetReviewsForUserUseCase(repository),
+    );
+  }
+
+  static StatisticsProvider createStatisticsProvider() {
+    final remoteDataSource =
+        StatisticsRemoteDataSource(firestore: FirebaseFirestore.instance);
+    final repository = StatisticsRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+      getDriverStatisticsUseCase: GetDriverStatistics(),
+      getUniversityStatisticsUseCase: GetUniversityStatistics(),
+    );
+    return StatisticsProvider(repository: repository);
+  }
+
+  static ProfileProvider createProfileProvider() {
+    final repository = ProfileRepositoryImpl(
+      ProfileRemoteDataSource(firestore: FirebaseFirestore.instance),
+    );
+    return ProfileProvider(
+      getProfileUseCase: GetProfileUseCase(repository),
+      updateProfileUseCase: UpdateProfileUseCase(repository),
     );
   }
 }
