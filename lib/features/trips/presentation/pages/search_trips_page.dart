@@ -8,6 +8,7 @@ import '../../data/datasources/trips_remote_datasource.dart';
 import '../../data/repositories/trip_repository_impl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../controllers/trip_controller.dart';
+import 'package:go_router/go_router.dart';
 
 class SearchTripsPage extends StatefulWidget {
   const SearchTripsPage({super.key});
@@ -184,6 +185,23 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 1,
+        onTap: (index) {
+          if (index == 0) {
+            context.go('/trips/publish');
+          } else if (index == 1) {
+            context.go('/trips/search');
+          } else if (index == 2) {
+            context.go('/trips/history');
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Publier'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Rechercher'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historique'),
+        ],
       ),
     );
   }

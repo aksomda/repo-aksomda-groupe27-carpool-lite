@@ -5,7 +5,7 @@ import '../../features/trips/presentation/pages/search_trips_page.dart';
 import '../../features/trips/presentation/pages/trip_history_page.dart';
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/auth',
+  initialLocation: '/trips/publish',
 
   routes: [
     // 1. Authentification & Profil
@@ -35,10 +35,9 @@ final GoRouter appRouter = GoRouter(
           const Scaffold(body: Center(child: Text('Gestion des Véhicules'))),
     ),
 
-    // 4. Trajets
     GoRoute(
       path: '/trips',
-      builder: (context, state) => const Scaffold(body: Center(child: Text('Gestion des Trajets'))),
+      builder: (context, state) => const SearchTripsPage(),
       routes: [
         // Publication
         GoRoute(path: 'publish', builder: (context, state) => const PublishTripPage()),

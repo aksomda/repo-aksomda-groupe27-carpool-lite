@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/datasources/trips_remote_datasource.dart';
 import '../../data/repositories/trip_repository_impl.dart';
@@ -118,6 +119,23 @@ class _TripHistoryPageState extends State<TripHistoryPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Historique des trajets')),
       body: _buildBody(),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 2,
+        onTap: (index) {
+          if (index == 0) {
+            context.go('/trips/publish');
+          } else if (index == 1) {
+            context.go('/trips/search');
+          } else if (index == 2) {
+            context.go('/trips/history');
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Publier'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Rechercher'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historique'),
+        ],
+      ),
     );
   }
 

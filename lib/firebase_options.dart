@@ -41,48 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBe55YrEm1D_AS3UmFgPbbCUG84qmJFJCc',
-    appId: '1:943592320:web:cee68e35e1b4e3fde7e765',
-    messagingSenderId: '943592320',
-    projectId: 'acarpool-lite-bc318',
-    authDomain: 'acarpool-lite-bc318.firebaseapp.com',
-    storageBucket: 'acarpool-lite-bc318.firebasestorage.app',
-    measurementId: 'G-2D4GNKGSRB',
+    apiKey: 'AIzaSyBiHW6af5NqVD9bKI-tALb7_HO0N99xVvQ',
+    appId: '1:254475674559:web:d30736e7230d291ac4370a',
+    messagingSenderId: '254475674559',
+    projectId: 'carpoollite',
+    authDomain: 'carpoollite.firebaseapp.com',
+    storageBucket: 'carpoollite.firebasestorage.app',
+    measurementId: 'G-C6MYCFG5GM',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBc7k591-hNWt_rZK1ffAEjY9UEAagJR5s',
-    appId: '1:943592320:android:1527c6da26848ddee7e765',
-    messagingSenderId: '943592320',
-    projectId: 'acarpool-lite-bc318',
-    storageBucket: 'acarpool-lite-bc318.firebasestorage.app',
+    apiKey: 'AIzaSyCPlGASo7yqWEiBqP5jjO5XyaxGxTcnf-Q',
+    appId: '1:254475674559:android:bf4f937024649afac4370a',
+    messagingSenderId: '254475674559',
+    projectId: 'carpoollite',
+    storageBucket: 'carpoollite.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBzkhxy86zeEIK-v10OwYjolmdKMGiTLYI',
-    appId: '1:943592320:ios:5ab99ebf38b4c485e7e765',
-    messagingSenderId: '943592320',
-    projectId: 'acarpool-lite-bc318',
-    storageBucket: 'acarpool-lite-bc318.firebasestorage.app',
+    apiKey: 'AIzaSyApLtDN6WtWPjMoRc-wd29SYJd5mYBl00Y',
+    appId: '1:254475674559:ios:719b5cbf892bd478c4370a',
+    messagingSenderId: '254475674559',
+    projectId: 'carpoollite',
+    storageBucket: 'carpoollite.firebasestorage.app',
+    iosClientId: '254475674559-haukq58kuvt6ucnlevp7s7ug5fufm0vf.apps.googleusercontent.com',
     iosBundleId: 'com.example.repoAksomdaGroupe27CarpoolLite',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBzkhxy86zeEIK-v10OwYjolmdKMGiTLYI',
-    appId: '1:943592320:ios:5ab99ebf38b4c485e7e765',
-    messagingSenderId: '943592320',
-    projectId: 'acarpool-lite-bc318',
-    storageBucket: 'acarpool-lite-bc318.firebasestorage.app',
+    apiKey: 'AIzaSyApLtDN6WtWPjMoRc-wd29SYJd5mYBl00Y',
+    appId: '1:254475674559:ios:719b5cbf892bd478c4370a',
+    messagingSenderId: '254475674559',
+    projectId: 'carpoollite',
+    storageBucket: 'carpoollite.firebasestorage.app',
+    iosClientId: '254475674559-haukq58kuvt6ucnlevp7s7ug5fufm0vf.apps.googleusercontent.com',
     iosBundleId: 'com.example.repoAksomdaGroupe27CarpoolLite',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBe55YrEm1D_AS3UmFgPbbCUG84qmJFJCc',
-    appId: '1:943592320:web:cbbed3c9fc7609c4e7e765',
-    messagingSenderId: '943592320',
-    projectId: 'acarpool-lite-bc318',
-    authDomain: 'acarpool-lite-bc318.firebaseapp.com',
-    storageBucket: 'acarpool-lite-bc318.firebasestorage.app',
-    measurementId: 'G-MH386YHC71',
+    apiKey: 'AIzaSyBiHW6af5NqVD9bKI-tALb7_HO0N99xVvQ',
+    appId: '1:254475674559:web:b834202f8b620aebc4370a',
+    messagingSenderId: '254475674559',
+    projectId: 'carpoollite',
+    authDomain: 'carpoollite.firebaseapp.com',
+    storageBucket: 'carpoollite.firebasestorage.app',
+    measurementId: 'G-3EFTM0534L',
   );
 }

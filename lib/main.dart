@@ -1,14 +1,16 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'core/router/app_router.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialisation globale de Firebase pour Firestore, Auth et Cloud Messaging
   await Firebase.initializeApp();
 
-  runApp(const CarpoolLiteApp());
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  runApp(const ProviderScope(child: CarpoolLiteApp()));
 }
 
 class CarpoolLiteApp extends StatelessWidget {

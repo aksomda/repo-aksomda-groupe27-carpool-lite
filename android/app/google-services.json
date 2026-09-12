@@ -1,26 +1,43 @@
 {
   "project_info": {
-    "project_number": "943592320",
-    "project_id": "acarpool-lite-bc318",
-    "storage_bucket": "acarpool-lite-bc318.firebasestorage.app"
+    "project_number": "254475674559",
+    "project_id": "carpoollite",
+    "storage_bucket": "carpoollite.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:943592320:android:1527c6da26848ddee7e765",
+        "mobilesdk_app_id": "1:254475674559:android:bf4f937024649afac4370a",
         "android_client_info": {
           "package_name": "com.example.repo_aksomda_groupe27_carpool_lite"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "254475674559-v8q0egqgk4vfoh4b2r09upfp24hgsut4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyBc7k591-hNWt_rZK1ffAEjY9UEAagJR5s"
+          "current_key": "AIzaSyCPlGASo7yqWEiBqP5jjO5XyaxGxTcnf-Q"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "254475674559-v8q0egqgk4vfoh4b2r09upfp24hgsut4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "254475674559-haukq58kuvt6ucnlevp7s7ug5fufm0vf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.repoAksomdaGroupe27CarpoolLite"
+              }
+            }
+          ]
         }
       }
     }

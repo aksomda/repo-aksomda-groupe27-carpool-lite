@@ -1,11 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/trip.dart';
 import '../../domain/usecases/publish_trip.dart';
 import '../../data/datasources/trips_remote_datasource.dart';
 import '../../data/repositories/trip_repository_impl.dart';
 import '../controllers/trip_controller.dart';
+
+import '../../domain/usecases/search_trips.dart';
+import '../../domain/usecases/get_trip_history.dart';
+import '../../domain/usecases/cancel_trip.dart';
 
 class PublishTripPage extends StatefulWidget {
   const PublishTripPage({super.key});
@@ -32,16 +37,14 @@ class _PublishTripPageState extends State<PublishTripPage> {
     super.initState();
 
     final firestore = FirebaseFirestore.instance;
-
     final remoteDataSource = TripsRemoteDataSource(firestore);
-
     final repository = TripRepositoryImpl(remoteDataSource);
 
     _controller = TripController(
       publishTrip: PublishTrip(repository),
-      searchTrips: throw UnimplementedError(),
-      getTripHistory: throw UnimplementedError(),
-      cancelTrip: throw UnimplementedError(),
+      searchTrips: SearchTrips(repository),
+      getTripHistory: GetTripHistory(repository),
+      cancelTrip: CancelTrip(repository),
     );
   }
 
@@ -242,6 +245,7 @@ class _PublishTripPageState extends State<PublishTripPage> {
                 builder: (context, child) {
                   return FilledButton(
                     onPressed: _controller.isLoading ? null : _publish,
+
                     child: _controller.isLoading
                         ? const CircularProgressIndicator()
                         : const Text('Publier le trajet'),
@@ -251,6 +255,23 @@ class _PublishTripPageState extends State<PublishTripPage> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        onTap: (index) {
+          if (index == 0) {
+            context.go('/trips/publish');
+          } else if (index == 1) {
+            context.go('/trips/search');
+          } else if (index == 2) {
+            context.go('/trips/history');
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Publier'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Rechercher'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historique'),
+        ],
       ),
     );
   }
