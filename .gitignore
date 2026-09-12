@@ -43,3 +43,22 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Backend (server/) et Cloud Functions (functions/) : dépendances et secrets
+server/node_modules/
+server/.env
+functions/node_modules/
+functions/.env
+functions/.runtimeconfig.json
+
+# Logs de crash du démon Gradle (générés localement, jamais à committer)
+hs_err_pid*.log
+replay_pid*.log
+
+# Config Firebase native : à générer localement via `flutterfire configure`
+# ou téléchargée depuis la console Firebase (contient des identifiants liés
+# au projet, pas de secret sensible en soi, mais spécifique à chaque
+# environnement).
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
