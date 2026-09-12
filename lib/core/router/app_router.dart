@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/presentation/screens/chat_list_screen.dart';
@@ -54,7 +55,7 @@ final GoRouter appRouter = GoRouter(
 
     GoRoute(path: '/bookings', builder: (_, _) => const MyBookingsScreen()),
     GoRoute(path: '/vehicles', builder: (_, _) => const VehicleListScreen()),
-    GoRoute(path: '/chat', builder: (_, _) => const ChatListScreen(currentUserId: "currentUserId")),
+    GoRoute(path: '/chat', builder: (_, _) => ProviderScope(child: ChatListScreen(authProvider: Injector.authProvider))),
     GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
     GoRoute(path: '/reviews', builder: (_, _) => const UserReviewsScreen()),
 
