@@ -27,6 +27,7 @@ import '../../features/levels/presentation/pages/academic_level_list_page.dart';
 import '../../features/ufrs/presentation/pages/ufr_list_page.dart';
 import '../../features/universities/presentation/pages/university_list_page.dart';
 import '../../features/user_management/presentation/screens/user_management_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/auth',
@@ -47,7 +48,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/auth/verify-student', builder: (_, _) => VerifyStudentScreen(authProvider: Injector.authProvider)),
     GoRoute(path: '/auth/verify-email', builder: (_, _) => EmailOtpScreen(authProvider: Injector.authProvider)),
     GoRoute(path: '/home', builder: (_, _) => AppDashboardScreen(authProvider: Injector.authProvider)),
-    GoRoute(path: '/profile', builder: (_, _) => const Scaffold(body: Center(child: Text('Profil')))),
+    GoRoute(
+      path: '/profile',
+      builder: (_, _) => ProfileScreen(
+        authProvider: Injector.authProvider,
+        profileProvider: Injector.createProfileProvider(),
+      ),
+    ),
     GoRoute(path: '/universities', builder: (_, _) => ChangeNotifierProvider(create: (_) => Injector.createUniversityProvider(), child: const UniversitySelectionScreen())),
 
     GoRoute(path: '/trips/publish', builder: (_, _) => const PublishTripScreen()),

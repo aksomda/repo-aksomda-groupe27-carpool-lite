@@ -29,6 +29,12 @@ import '../../features/statistics/domain/usecases/get_driver_statistics.dart';
 import '../../features/statistics/domain/usecases/get_university_statistics.dart';
 import '../../features/statistics/presentation/providers/statistics_provider.dart';
 
+import '../../features/profile/data/datasources/profile_remote_datasource.dart';
+import '../../features/profile/data/repositories/profile_repository_impl.dart';
+import '../../features/profile/domain/usecases/get_profile_usecase.dart';
+import '../../features/profile/domain/usecases/update_profile_usecase.dart';
+import '../../features/profile/presentation/providers/profile_provider.dart';
+
 
 /// Point unique de câblage manuel des dépendances (pas d'injection de code
 /// généré : on construit ici, une seule fois, les datasources → repository
@@ -85,5 +91,15 @@ class Injector {
       getUniversityStatisticsUseCase: GetUniversityStatistics(),
     );
     return StatisticsProvider(repository: repository);
+  }
+
+  static ProfileProvider createProfileProvider() {
+    final repository = ProfileRepositoryImpl(
+      ProfileRemoteDataSource(firestore: FirebaseFirestore.instance),
+    );
+    return ProfileProvider(
+      getProfileUseCase: GetProfileUseCase(repository),
+      updateProfileUseCase: UpdateProfileUseCase(repository),
+    );
   }
 }
