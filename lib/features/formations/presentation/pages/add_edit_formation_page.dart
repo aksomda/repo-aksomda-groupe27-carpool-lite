@@ -93,12 +93,18 @@ class _AddEditFormationPageState extends State<AddEditFormationPage> {
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isEditing ? 'Formation modifiée.' : 'Formation ajoutée.')),
+        SnackBar(
+          content: Text(
+            _isEditing ? 'Formation modifiée.' : 'Formation ajoutée.',
+          ),
+        ),
       );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -108,7 +114,9 @@ class _AddEditFormationPageState extends State<AddEditFormationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Modifier la formation' : 'Ajouter une formation'),
+        title: Text(
+          _isEditing ? 'Modifier la formation' : 'Ajouter une formation',
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -145,7 +153,8 @@ class _AddEditFormationPageState extends State<AddEditFormationPage> {
                     .map((d) => DropdownMenuItem(value: d, child: Text(d)))
                     .toList(),
                 onChanged: (value) => setState(() => _selectedDiploma = value),
-                validator: (value) => value == null ? 'Sélectionnez un type de diplôme' : null,
+                validator: (value) =>
+                    value == null ? 'Sélectionnez un type de diplôme' : null,
               ),
               const SizedBox(height: 12),
               StreamBuilder<List<UfrModel>>(
@@ -154,7 +163,9 @@ class _AddEditFormationPageState extends State<AddEditFormationPage> {
                   final ufrs = snapshot.data ?? [];
 
                   if (_isEditing && _selectedUfrId == null) {
-                    final match = ufrs.where((u) => u.id == widget.existing!.ufrId).toList();
+                    final match = ufrs
+                        .where((u) => u.id == widget.existing!.ufrId)
+                        .toList();
                     if (match.isNotEmpty) {
                       _selectedUfrId = match.first.id;
                       _selectedUfrName = match.first.name;
@@ -164,18 +175,30 @@ class _AddEditFormationPageState extends State<AddEditFormationPage> {
                   return DropdownButtonFormField<String>(
                     initialValue: _selectedUfrId,
                     decoration: const InputDecoration(
-                      labelText: 'UFR de rattachement',
+                      labelText:
+                          'Unité de formation et de recherche (UFR) de rattachement',
                       border: OutlineInputBorder(),
                     ),
-                    hint: Text(_isEditing ? widget.existing!.ufrName : 'Sélectionnez une UFR'),
+                    hint: Text(
+                      _isEditing
+                          ? widget.existing!.ufrName
+                          : 'Sélectionnez une Unité de formation et de recherche (UFR)',
+                    ),
                     items: ufrs
-                        .map((u) => DropdownMenuItem(value: u.id, child: Text(u.name)))
+                        .map(
+                          (u) => DropdownMenuItem(
+                            value: u.id,
+                            child: Text(u.name),
+                          ),
+                        )
                         .toList(),
                     onChanged: (value) {
                       final match = ufrs.where((u) => u.id == value).toList();
                       setState(() {
                         _selectedUfrId = value;
-                        _selectedUfrName = match.isNotEmpty ? match.first.name : null;
+                        _selectedUfrName = match.isNotEmpty
+                            ? match.first.name
+                            : null;
                       });
                     },
                   );

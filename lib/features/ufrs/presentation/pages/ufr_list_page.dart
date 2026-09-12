@@ -16,7 +16,11 @@ class UfrListPage extends StatelessWidget {
 
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Gestion des UFRs')),
+      appBar: AppBar(
+        title: const Text(
+          'Gestion des unités de formations et de recherches (UFRs)',
+        ),
+      ),
       body: StreamBuilder<List<UfrModel>>(
         stream: repository.getUfrs(),
         builder: (context, snapshot) {
@@ -62,9 +66,9 @@ class UfrListPage extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const AddEditUfrPage()),
-        ),
+        onPressed: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AddEditUfrPage())),
         icon: const Icon(Icons.add),
         label: const Text('Ajouter'),
       ),
