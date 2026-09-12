@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/message.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/conversationcard.dart';
@@ -10,11 +11,11 @@ import 'chat_screen.dart';
 class ChatListScreen
     extends ConsumerStatefulWidget {
 
-  final String currentUserId;
+  final AuthProvider authProvider;
 
   const ChatListScreen({
     super.key,
-    required this.currentUserId,
+    required this.authProvider,
   });
 
   @override
@@ -32,6 +33,15 @@ class _ChatListScreenState
 
   String _search = '';
 
+
+  late final currentUser;
+
+  @override
+  void initState() {
+    currentUser = widget.authProvider.user;
+    super.initState();
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -42,7 +52,7 @@ class _ChatListScreenState
       Message message,
       ) {
     return message.senderId ==
-        widget.currentUserId
+        currentUser.uid
         ? message.receiverId
         : message.senderId;
   }
@@ -83,7 +93,7 @@ class _ChatListScreenState
     final messagesAsync =
     ref.watch(
       userMessagesProvider(
-        widget.currentUserId,
+        currentUser.uid,
       ),
     );
 
@@ -111,7 +121,7 @@ class _ChatListScreenState
                 children: [
 
                   Image.asset(
-                    'assets/CarPoolLite_logo_sn.png',
+                    'assets/images/CarPoolLite_logo_sn.png',
                     width: 155,
                   ),
 
@@ -305,9 +315,7 @@ class _ChatListScreenState
                   for (final message
                   in messages) {
                     final contact =
-                    _getContactId(
-                      message,
-                    );
+                    currentUser.uid;
 
                     final previous =
                     latest[contact];
@@ -327,9 +335,7 @@ class _ChatListScreenState
                   latest.values
                       .where((message) {
                     final contact =
-                    _getContactId(
-                      message,
-                    );
+                    currentUser.uid;
 
                     return contact
                         .toLowerCase()
@@ -383,8 +389,7 @@ class _ChatListScreenState
                       final unread =
                           !message.isRead &&
                               message.receiverId ==
-                                  widget
-                                      .currentUserId;
+                                  currentUser.uid;
 
                       return ConversationCard(
                         contactId: contact,
@@ -398,13 +403,12 @@ class _ChatListScreenState
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  ChatDetailScreen(
+                                  ProviderScope(child: ChatDetailScreen(
                                     currentUserId:
-                                    widget
-                                        .currentUserId,
+                                    currentUser.uid,
                                     contactId:
                                     contact,
-                                  ),
+                                  ),)
                             ),
                           );
                         },

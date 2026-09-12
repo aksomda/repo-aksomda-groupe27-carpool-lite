@@ -58,7 +58,7 @@ class ConversationCard
                     radius: 34,
                     backgroundImage:
                     AssetImage(
-                      'assets/profile.png',
+                      'assets/images/CarPoolLite_logo_s.png',
                     ),
                   ),
 
