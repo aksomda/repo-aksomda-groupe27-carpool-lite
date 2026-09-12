@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/presentation/screens/chat_list_screen.dart';
 
 import '../di/injector.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
@@ -15,7 +16,6 @@ import '../../features/trips/presentation/screens/search_trips_screen.dart';
 import '../../features/trips/presentation/screens/trip_history_screen.dart';
 import '../../features/bookings/presentation/screens/my_bookings_screen.dart';
 import '../../features/vehicles/presentation/screens/vehicle_list_screen.dart';
-import '../../features/chat/presentation/screens/conversations_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/reviews/presentation/screens/user_reviews_screen.dart';
 import '../../features/campus/presentation/pages/campus_list_page.dart';
@@ -54,7 +54,7 @@ final GoRouter appRouter = GoRouter(
 
     GoRoute(path: '/bookings', builder: (_, _) => const MyBookingsScreen()),
     GoRoute(path: '/vehicles', builder: (_, _) => const VehicleListScreen()),
-    GoRoute(path: '/chat', builder: (_, _) => const ConversationsScreen()),
+    GoRoute(path: '/chat', builder: (_, _) => const ChatListScreen(currentUserId: "currentUserId")),
     GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
     GoRoute(path: '/reviews', builder: (_, _) => const UserReviewsScreen()),
 
