@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:repo_aksomda_groupe27_carpool_lite/features/ReelTimeChat/domain/entities/message.dart';
-import 'package:repo_aksomda_groupe27_carpool_lite/features/ReelTimeChat/domain/repositories/chat_repository.dart';
-import 'package:repo_aksomda_groupe27_carpool_lite/features/ReelTimeChat/domain/usecases/get_messages.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/domain/entities/message.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/domain/repositories/chat_repository.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/domain/usecases/get_messages.dart';
 
 class MockChatRepository extends Mock implements ChatRepository {}
 

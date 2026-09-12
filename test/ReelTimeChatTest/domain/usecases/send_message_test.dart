@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:repo_aksomda_groupe27_carpool_lite/features/ReelTimeChat/domain/repositories/chat_repository.dart';
-import 'package:repo_aksomda_groupe27_carpool_lite/features/ReelTimeChat/domain/usecases/send_message.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/domain/repositories/chat_repository.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/domain/usecases/send_message.dart';
 
 class MockChatRepository extends Mock implements ChatRepository {}
 

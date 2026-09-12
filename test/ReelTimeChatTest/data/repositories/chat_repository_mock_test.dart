@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:repo_aksomda_groupe27_carpool_lite/features/ReelTimeChat/data/datasources/firebase_chat_datasource.dart';
-import 'package:repo_aksomda_groupe27_carpool_lite/features/ReelTimeChat/data/repositories_impl/chat_repository_impl.dart';
-
+import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/data/datasources/firebase_chat_datasource.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/data/repositories_impl/chat_repository_impl.dart';
 
 void main() {
   late FakeFirebaseFirestore firestore;
