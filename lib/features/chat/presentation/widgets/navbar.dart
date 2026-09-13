@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 class MaBottomNavigationBar
     extends StatelessWidget {
 
+  const MaBottomNavigationBar({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(

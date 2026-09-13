@@ -51,7 +51,7 @@ String _formatHeure(DateTime date) {
 }
 
 /// Tableau de bord de l'administrateur, affiché comme page d'accueil sur
-/// [AppDashboardScreen] lorsque l'utilisateur connecté a le rôle admin.
+/// [AdminHomeScreen] lorsque l'utilisateur connecté a le rôle admin.
 ///
 /// Les compteurs (utilisateurs, universités, formations) sont branchés sur
 /// les données réelles Firestore. Deux éléments du visuel d'origine n'ont en

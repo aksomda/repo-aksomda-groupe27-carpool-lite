@@ -2,12 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/auth/domain/entities/user_entity.dart';
 import 'package:repo_aksomda_groupe27_carpool_lite/features/auth/presentation/providers/auth_provider.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../widgets/home_header.dart';
 import '../widgets/search_trip_card.dart';
 import '../widgets/bottom_navigation.dart';
+import '../widgets/quick_access_grid.dart';
+import '../widgets/app_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
 
@@ -24,34 +27,50 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState
     extends State<HomeScreen> {
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  void _searchTrip() {
-    final snackBar = SnackBar(
-      content: const Text(
-        'Recherche de trajets...',
-      ),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-    );
-
-    ScaffoldMessenger.of(context)
-        .showSnackBar(snackBar);
-  }
-
-  late final user;
+  late final UserEntity user;
 
   @override
   void initState() {
-    user = widget.authProvider.user;
+    user = widget.authProvider.user!;
     super.initState();
+  }
+
+  Future<void> _confirmSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Déconnexion'),
+        content: const Text(
+          'Voulez-vous vraiment vous déconnecter ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Déconnexion'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await widget.authProvider.signOut();
+      if (mounted) context.go('/auth');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       extendBody: false,
+
+      drawer: AppDrawer(authProvider: widget.authProvider),
 
       body: SafeArea(
         bottom: false,
@@ -73,8 +92,9 @@ class _HomeScreenState
                           0,
                         ),
                         child: HomeHeader(
+                          onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
                           onNotificationPressed: () => context.go('/chat'),
-                          onProfilePressed: () => context.go('/profil'),
+                          onProfilePressed: () => context.go('/profile'),
                         ),
                     ),
 
@@ -170,6 +190,50 @@ class _HomeScreenState
 
                     // RECHERCHE
                     const SearchTripCard(),
+
+                    const SizedBox(height: 10),
+
+                    // ACCÈS RAPIDE
+                    QuickAccessGrid(
+                      items: [
+                        QuickAccessItem(
+                          icon: Icons.star_rounded,
+                          label: 'Évaluation\nd\'un trajet',
+                          color: AppColors.quickPurple,
+                          onTap: () => context.go('/reviews'),
+                        ),
+                        QuickAccessItem(
+                          icon: Icons.inbox_rounded,
+                          label: 'Demandes de\nréservation',
+                          color: AppColors.quickGreen,
+                          onTap: () => context.go('/bookings'),
+                        ),
+                        QuickAccessItem(
+                          icon: Icons.history_rounded,
+                          label: 'Historique\nde mes trajets',
+                          color: AppColors.quickYellow,
+                          onTap: () => context.go('/trips/history'),
+                        ),
+                        QuickAccessItem(
+                          icon: Icons.directions_car_filled_rounded,
+                          label: 'Véhicules',
+                          color: AppColors.quickBlue,
+                          onTap: () => context.go('/vehicles'),
+                        ),
+                        QuickAccessItem(
+                          icon: Icons.bar_chart_rounded,
+                          label: 'Statistiques',
+                          color: AppColors.quickPurple,
+                          onTap: () => context.go('/statistics'),
+                        ),
+                        QuickAccessItem(
+                          icon: Icons.logout_rounded,
+                          label: 'Déconnexion',
+                          color: AppColors.quickYellow,
+                          onTap: _confirmSignOut,
+                        ),
+                      ],
+                    ),
 
                   ],
                 ),

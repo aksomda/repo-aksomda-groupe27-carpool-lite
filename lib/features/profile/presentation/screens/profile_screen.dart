@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
@@ -43,7 +44,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               IconButton(
                 icon: const Icon(Icons.logout),
                 tooltip: 'Déconnexion',
-                onPressed: () => widget.authProvider.signOut(),
+                onPressed: () async {
+                  await widget.authProvider.signOut();
+                  if (context.mounted) context.go('/auth');
+                },
               ),
             ],
           ),

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,22 +33,45 @@ final GoRouter appRouter = GoRouter(
   initialLocation: '/auth',
   redirect: (_, state) {
     final location = state.matchedLocation;
-    final isAdminRoute = location.startsWith('/admin');
-    if (!isAdminRoute) return null;
-
     final user = Injector.authProvider.user;
     final isAdmin = (user?.role ?? 'student').toLowerCase() == 'admin';
-    if (user == null) return '/auth';
-    if (!isAdmin) return '/home';
+
+    final isAdminRoute = location.startsWith('/admin');
+    if (isAdminRoute) {
+      if (user == null) return '/auth';
+      if (!isAdmin) return '/home';
+      return null;
+    }
+
+    // Un administrateur qui atterrit sur l'accueil étudiant (ex. juste
+    // après connexion) est redirigé vers son propre tableau de bord.
+    if (location == '/home' && isAdmin) return '/admin/dashboard';
+
     return null;
   },
   routes: [
-    GoRoute(path: '/auth', builder: (_, _) => LoginScreen(authProvider: Injector.authProvider)),
-    GoRoute(path: '/auth/register', builder: (_, _) => RegisterScreen(authProvider: Injector.authProvider)),
-    GoRoute(path: '/auth/verify-student', builder: (_, _) => VerifyStudentScreen(authProvider: Injector.authProvider)),
+    GoRoute(
+      path: '/auth',
+      builder: (_, _) => LoginScreen(authProvider: Injector.authProvider),
+    ),
+    GoRoute(
+      path: '/auth/register',
+      builder: (_, _) => RegisterScreen(authProvider: Injector.authProvider),
+    ),
+    GoRoute(
+      path: '/auth/verify-student',
+      builder: (_, _) =>
+          VerifyStudentScreen(authProvider: Injector.authProvider),
+    ),
     //GoRoute(path: '/auth/verify-email', builder: (_, _) => EmailOtpScreen(authProvider: Injector.authProvider)),
-    GoRoute(path: '/home', builder: (_, _) => HomeScreen(authProvider: Injector.authProvider)),
-    GoRoute(path: '/home', builder: (_, _) => AppDashboardScreen(authProvider: Injector.authProvider)),
+    GoRoute(
+      path: '/home',
+      builder: (_, _) => HomeScreen(authProvider: Injector.authProvider),
+    ),
+    GoRoute(
+      path: '/admin/dashboard',
+      builder: (_, _) => AdminHomeScreen(authProvider: Injector.authProvider),
+    ),
     GoRoute(
       path: '/profile',
       builder: (_, _) => ProfileScreen(
@@ -57,17 +79,40 @@ final GoRouter appRouter = GoRouter(
         profileProvider: Injector.createProfileProvider(),
       ),
     ),
-    GoRoute(path: '/universities', builder: (_, _) => ChangeNotifierProvider(create: (_) => Injector.createUniversityProvider(), child: const UniversitySelectionScreen())),
+    GoRoute(
+      path: '/universities',
+      builder: (_, _) => ChangeNotifierProvider(
+        create: (_) => Injector.createUniversityProvider(),
+        child: const UniversitySelectionScreen(),
+      ),
+    ),
 
-    GoRoute(path: '/trips/publish', builder: (_, _) => const PublishTripScreen()),
-    GoRoute(path: '/trips/search', builder: (_, _) => const SearchTripsScreen()),
-    GoRoute(path: '/trips/history', builder: (_, _) => const TripHistoryScreen()),
+    GoRoute(
+      path: '/trips/publish',
+      builder: (_, _) => const PublishTripScreen(),
+    ),
+    GoRoute(
+      path: '/trips/search',
+      builder: (_, _) => const SearchTripsScreen(),
+    ),
+    GoRoute(
+      path: '/trips/history',
+      builder: (_, _) => const TripHistoryScreen(),
+    ),
     GoRoute(path: '/trips', builder: (_, _) => const SearchTripsScreen()),
 
     GoRoute(path: '/bookings', builder: (_, _) => const MyBookingsScreen()),
     GoRoute(path: '/vehicles', builder: (_, _) => const VehicleListScreen()),
-    GoRoute(path: '/chat', builder: (_, _) => ProviderScope(child: ChatListScreen(authProvider: Injector.authProvider))),
-    GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
+    GoRoute(
+      path: '/chat',
+      builder: (_, _) => ProviderScope(
+        child: ChatListScreen(authProvider: Injector.authProvider),
+      ),
+    ),
+    GoRoute(
+      path: '/notifications',
+      builder: (_, _) => const NotificationsScreen(),
+    ),
     GoRoute(
       path: '/reviews',
       builder: (_, _) => ChangeNotifierProvider(
@@ -93,33 +138,59 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    GoRoute(path: '/admin/users', builder: (_, _) => const UserManagementScreen()),
-    GoRoute(path: '/admin/universities', builder: (_, _) => const UniversityListPage()),
+    GoRoute(
+      path: '/admin/users',
+      builder: (_, _) => const UserManagementScreen(),
+    ),
+    GoRoute(
+      path: '/admin/universities',
+      builder: (_, _) => const UniversityListPage(),
+    ),
     GoRoute(path: '/admin/campuses', builder: (_, _) => const CampusListPage()),
-    GoRoute(path: '/admin/formations', builder: (_, _) => const FormationListPage()),
-    GoRoute(path: '/admin/levels', builder: (_, _) => const AcademicLevelListPage()),
+    GoRoute(
+      path: '/admin/formations',
+      builder: (_, _) => const FormationListPage(),
+    ),
+    GoRoute(
+      path: '/admin/levels',
+      builder: (_, _) => const AcademicLevelListPage(),
+    ),
     GoRoute(path: '/admin/ufrs', builder: (_, _) => const UfrListPage()),
     GoRoute(
       path: '/admin/reports',
-      builder: (_, _) => const ComingSoonScreen(title: 'Signalements', icon: Icons.warning_amber_rounded),
+      builder: (_, _) => const ComingSoonScreen(
+        title: 'Signalements',
+        icon: Icons.warning_amber_rounded,
+      ),
     ),
     GoRoute(
       path: '/admin/blacklist',
-      builder: (_, _) => const ComingSoonScreen(title: 'Liste noire', icon: Icons.block_outlined),
+      builder: (_, _) => const ComingSoonScreen(
+        title: 'Liste noire',
+        icon: Icons.block_outlined,
+      ),
     ),
     GoRoute(
       path: '/admin/settings',
-      builder: (_, _) => const ComingSoonScreen(title: 'Paramètres généraux', icon: Icons.settings_outlined),
+      builder: (_, _) => const ComingSoonScreen(
+        title: 'Paramètres généraux',
+        icon: Icons.settings_outlined,
+      ),
     ),
     GoRoute(
       path: '/admin/logs',
-      builder: (_, _) => const ComingSoonScreen(title: 'Logs / Historique', icon: Icons.history),
+      builder: (_, _) => const ComingSoonScreen(
+        title: 'Logs / Historique',
+        icon: Icons.history,
+      ),
     ),
     GoRoute(
       path: '/statistics',
       builder: (_, _) => ChangeNotifierProvider(
         create: (_) => Injector.createStatisticsProvider(),
-        child: DriverStatisticsScreen(driverId: Injector.authProvider.user?.uid ?? ''),
+        child: DriverStatisticsScreen(
+          driverId: Injector.authProvider.user?.uid ?? '',
+        ),
       ),
     ),
     GoRoute(
@@ -132,5 +203,6 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
   ],
-  errorBuilder: (_, state) => Scaffold(body: Center(child: Text('Route introuvable : ${state.error}'))),
+  errorBuilder: (_, state) =>
+      Scaffold(body: Center(child: Text('Route introuvable : ${state.error}'))),
 );

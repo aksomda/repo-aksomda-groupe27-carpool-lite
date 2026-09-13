@@ -5,11 +5,13 @@ import '../../../../core/theme/app_theme.dart';
 class HomeHeader extends StatelessWidget {
   final VoidCallback? onNotificationPressed;
   final VoidCallback? onProfilePressed;
+  final VoidCallback? onMenuPressed;
 
   const HomeHeader({
     super.key,
     this.onNotificationPressed,
     this.onProfilePressed,
+    this.onMenuPressed,
   });
 
   @override
@@ -17,6 +19,16 @@ class HomeHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // MENU
+        IconButton(
+          onPressed: onMenuPressed,
+          icon: const Icon(
+            Icons.menu_rounded,
+            size: 26,
+            color: AppColors.textDark,
+          ),
+        ),
+
         // LOGO
         Expanded(
           child: Image.asset(

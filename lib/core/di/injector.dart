@@ -35,7 +35,6 @@ import '../../features/profile/domain/usecases/get_profile_usecase.dart';
 import '../../features/profile/domain/usecases/update_profile_usecase.dart';
 import '../../features/profile/presentation/providers/profile_provider.dart';
 
-
 /// Point unique de câblage manuel des dépendances (pas d'injection de code
 /// généré : on construit ici, une seule fois, les datasources → repository
 /// → usecases → providers, à partir des instances Firebase déjà
@@ -58,7 +57,9 @@ class Injector {
     signUpUserCase: SignUpUserCase(authRepository),
     verifyStudentUseCase: VerifyStudentUseCase(authRepository),
     sendEmailVerificationUseCase: SendEmailVerificationUseCase(authRepository),
-    checkEmailVerificationUseCase: CheckEmailVerificationUseCase(authRepository),
+    checkEmailVerificationUseCase: CheckEmailVerificationUseCase(
+      authRepository,
+    ),
     authRepository: authRepository,
   );
 
@@ -83,8 +84,9 @@ class Injector {
   }
 
   static StatisticsProvider createStatisticsProvider() {
-    final remoteDataSource =
-        StatisticsRemoteDataSource(firestore: FirebaseFirestore.instance);
+    final remoteDataSource = StatisticsRemoteDataSource(
+      firestore: FirebaseFirestore.instance,
+    );
     final repository = StatisticsRepositoryImpl(
       remoteDataSource: remoteDataSource,
       getDriverStatisticsUseCase: GetDriverStatistics(),

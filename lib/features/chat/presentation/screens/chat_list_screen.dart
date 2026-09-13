@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../navigation/presentation/widgets/bottom_navigation.dart';
 import '../../domain/entities/message.dart';
@@ -34,11 +35,11 @@ class _ChatListScreenState
   String _search = '';
 
 
-  late final currentUser;
+  late final UserEntity currentUser;
 
   @override
   void initState() {
-    currentUser = widget.authProvider.user;
+    currentUser = widget.authProvider.user!;
     super.initState();
   }
 

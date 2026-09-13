@@ -218,7 +218,7 @@ class _SearchTripCardState
         borderRadius: BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.08),
+            color: Colors.blue.withValues(alpha: 0.08),
             blurRadius: 25,
             offset: const Offset(0, 8),
           ),
@@ -236,7 +236,7 @@ class _SearchTripCardState
                 height: 48,
                 decoration: BoxDecoration(
                   color: AppColors.primary
-                      .withOpacity(0.08),
+                      .withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
