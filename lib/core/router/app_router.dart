@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:repo_aksomda_groupe27_carpool_lite/features/chat/presentation/screens/chat_list_screen.dart';
 
 import '../../features/navigation/presentation/screens/home_screen.dart';
+import '../../features/notification/presentation/screens/notification_screen.dart';
 import '../di/injector.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -17,7 +18,6 @@ import '../../features/trips/presentation/screens/search_trips_screen.dart';
 import '../../features/trips/presentation/screens/trip_history_screen.dart';
 import '../../features/bookings/presentation/screens/my_bookings_screen.dart';
 import '../../features/vehicles/presentation/screens/vehicle_list_screen.dart';
-import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/reviews/presentation/screens/user_reviews_screen.dart';
 import '../../features/reviews/presentation/pages/create_review_page.dart';
 import '../../features/statistics/presentation/screens/statistics_dashboard_screen.dart';
@@ -67,7 +67,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/bookings', builder: (_, _) => const MyBookingsScreen()),
     GoRoute(path: '/vehicles', builder: (_, _) => const VehicleListScreen()),
     GoRoute(path: '/chat', builder: (_, _) => ProviderScope(child: ChatListScreen(authProvider: Injector.authProvider))),
-    GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
+    GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen(userId: '',)),
     GoRoute(
       path: '/reviews',
       builder: (_, _) => ChangeNotifierProvider(
