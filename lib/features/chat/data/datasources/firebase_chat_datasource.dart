@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 
 import '../model/message_model.dart';
 
@@ -150,4 +152,60 @@ class FirebaseChatDataSource {
 
     await batch.commit();
   }
+
+// ============================================================
+// REGISTER DEVICE
+// ============================================================
+
+  Future<void> registerDevice({
+    required String userId,
+  }) async {
+    try {
+      final token =
+      await FirebaseMessaging.instance.getToken();
+
+      debugPrint('=================================');
+      debugPrint('DEVICE REGISTRATION');
+      debugPrint('USER ID: $userId');
+      debugPrint('FCM TOKEN: $token');
+      debugPrint('=================================');
+
+      if (token == null || token.isEmpty) {
+        debugPrint(
+          '❌ Aucun token FCM disponible',
+        );
+        return;
+      }
+
+      final deviceRef = firestore
+          .collection('users')
+          .doc(userId)
+          .collection('devices')
+          .doc(token);
+
+      await deviceRef.set(
+        {
+          'fcmToken': token,
+          'platform': 'android',
+          'createdAt':
+          FieldValue.serverTimestamp(),
+          'updatedAt':
+          FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+
+      debugPrint(
+        '✅ Device enregistré dans Firestore',
+      );
+    } catch (e) {
+      debugPrint(
+        '❌ Erreur enregistrement device: $e',
+      );
+
+      rethrow;
+    }
+  }
+
+
 }

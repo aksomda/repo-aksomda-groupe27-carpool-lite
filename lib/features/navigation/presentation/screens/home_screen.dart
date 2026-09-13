@@ -13,23 +13,25 @@ import '../widgets/quick_access_grid.dart';
 import '../widgets/app_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
-
   final AuthProvider authProvider;
-  const HomeScreen({
-    super.key, required this.authProvider,
-  });
+  const HomeScreen({super.key, required this.authProvider});
 
   @override
-  State<HomeScreen> createState() =>
-      _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState
-    extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> {
+  void searchTrip() {
+    final snackBar = SnackBar(
+      content: const Text('Recherche de trajets...'),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    );
 
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
 
-  late final UserEntity user;
+  late final UserEntity? user;
 
   @override
   void initState() {
@@ -42,9 +44,7 @@ class _HomeScreenState
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Déconnexion'),
-        content: const Text(
-          'Voulez-vous vraiment vous déconnecter ?',
-        ),
+        content: const Text('Voulez-vous vraiment vous déconnecter ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -78,36 +78,25 @@ class _HomeScreenState
           children: [
             Expanded(
               child: SingleChildScrollView(
-
                 child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // HEADER
                     Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          20,
-                          20,
-                          20,
-                          0,
-                        ),
-                        child: HomeHeader(
-                          onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                          onNotificationPressed: () => context.go('/chat'),
-                          onProfilePressed: () => context.go('/profile'),
-                        ),
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                      child: HomeHeader(
+                        onMenuPressed: () =>
+                            _scaffoldKey.currentState?.openDrawer(),
+                        onNotificationPressed: () => context.go('/chat'),
+                        onProfilePressed: () => context.go('/profile'),
+                      ),
                     ),
 
                     // SALUTATION
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        20,
-                        20,
-                        20,
-                        0,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                       child: Text(
-                        'Bonjour ${user.name} ! 👋',
+                        'Bonjour ${user!.name} ! 👋',
                         style: TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w800,
@@ -117,12 +106,7 @@ class _HomeScreenState
                     ),
 
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        20,
-                        0,
-                        20,
-                        0,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                       child: const Text(
                         'Prêt(e) pour un nouveau trajet ?',
                         style: TextStyle(
@@ -134,12 +118,7 @@ class _HomeScreenState
 
                     // BANNER
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        20,
-                        35,
-                        20,
-                        35,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(20, 35, 20, 35),
                       child: Stack(
                         children: [
                           ClipRRect(
@@ -155,9 +134,8 @@ class _HomeScreenState
                           Positioned(
                             top: 10,
                             left: 15,
-                            child:
-                            Transform.rotate(
-                              angle:  -math.pi / 20.0,
+                            child: Transform.rotate(
+                              angle: -math.pi / 20.0,
                               child: const Text(
                                 'Ensemble',
                                 style: TextStyle(
@@ -166,12 +144,12 @@ class _HomeScreenState
                                   color: AppColors.primary,
                                 ),
                               ),
-                            ),),
+                            ),
+                          ),
                           Positioned(
                             bottom: 10,
                             left: 20,
-                            child:
-                            Transform.rotate(
+                            child: Transform.rotate(
                               angle: -math.pi / 20.0,
                               child: const Text(
                                 'vers vos \ndestinations !',
@@ -181,12 +159,11 @@ class _HomeScreenState
                                   color: AppColors.textDark,
                                 ),
                               ),
-                            ),),
-
+                            ),
+                          ),
                         ],
                       ),
                     ),
-
 
                     // RECHERCHE
                     const SearchTripCard(),
@@ -234,7 +211,6 @@ class _HomeScreenState
                         ),
                       ],
                     ),
-
                   ],
                 ),
               ),
@@ -243,10 +219,7 @@ class _HomeScreenState
         ),
       ),
 
-      bottomNavigationBar:
-      HomeBottomNavigation(
-        currentIndex: 0,
-      ),
+      bottomNavigationBar: HomeBottomNavigation(currentIndex: 0),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/auth/domain/entities/user_entity.dart';
 
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -9,33 +10,21 @@ import '../providers/chat_provider.dart';
 import '../widgets/conversationcard.dart';
 import 'chat_screen.dart';
 
-class ChatListScreen
-    extends ConsumerStatefulWidget {
-
+class ChatListScreen extends ConsumerStatefulWidget {
   final AuthProvider authProvider;
 
-  const ChatListScreen({
-    super.key,
-    required this.authProvider,
-  });
+  const ChatListScreen({super.key, required this.authProvider});
 
   @override
-  ConsumerState<ChatListScreen>
-  createState() =>
-      _ChatListScreenState();
+  ConsumerState<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatListScreenState
-    extends ConsumerState<ChatListScreen> {
-
-  final TextEditingController
-  _searchController =
-  TextEditingController();
+class _ChatListScreenState extends ConsumerState<ChatListScreen> {
+  final TextEditingController _searchController = TextEditingController();
 
   String _search = '';
 
-
-  late final UserEntity currentUser;
+  late final UserEntity? currentUser;
 
   @override
   void initState() {
@@ -49,18 +38,13 @@ class _ChatListScreenState
     super.dispose();
   }
 
-  String _getContactId(
-      Message message,
-      ) {
-    return message.senderId ==
-        currentUser.uid
+  String _getContactId(Message message) {
+    return message.senderId == currentUser!.uid
         ? message.receiverId
         : message.senderId;
   }
 
-  String _formatDate(
-      DateTime date,
-      ) {
+  String _formatDate(DateTime date) {
     final now = DateTime.now();
 
     if (date.year == now.year &&
@@ -70,57 +54,32 @@ class _ChatListScreenState
           '${date.minute.toString().padLeft(2, '0')}';
     }
 
-    if (date.day ==
-        now.day - 1 &&
-        date.month == now.month) {
+    if (date.day == now.day - 1 && date.month == now.month) {
       return 'Hier';
     }
 
-    const days = [
-      'Lun',
-      'Mar',
-      'Mer',
-      'Jeu',
-      'Ven',
-      'Sam',
-      'Dim',
-    ];
+    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
     return days[date.weekday - 1];
   }
 
   @override
   Widget build(BuildContext context) {
-    final messagesAsync =
-    ref.watch(
-      userMessagesProvider(
-        currentUser.uid,
-      ),
-    );
+    final messagesAsync = ref.watch(userMessagesProvider(currentUser!.uid));
 
     return Scaffold(
-      backgroundColor:
-      const Color(0xFFF8FBFF),
+      backgroundColor: const Color(0xFFF8FBFF),
 
       body: SafeArea(
         child: Column(
           children: [
-
             // =================================================
             // HEADER
             // =================================================
-
             Padding(
-              padding:
-              const EdgeInsets.fromLTRB(
-                28,
-                15,
-                20,
-                0,
-              ),
+              padding: const EdgeInsets.fromLTRB(28, 15, 20, 0),
               child: Row(
                 children: [
-
                   Image.asset(
                     'assets/images/CarPoolLite_logo_sn.png',
                     width: 155,
@@ -132,11 +91,9 @@ class _ChatListScreenState
                     children: [
                       IconButton(
                         icon: const Icon(
-                          Icons
-                              .notifications_none_rounded,
+                          Icons.notifications_none_rounded,
                           size: 30,
-                          color:
-                          Color(0xFF123B7A),
+                          color: Color(0xFF123B7A),
                         ),
                         onPressed: () {},
                       ),
@@ -147,11 +104,9 @@ class _ChatListScreenState
                         child: Container(
                           width: 9,
                           height: 9,
-                          decoration:
-                          const BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: Colors.red,
-                            shape:
-                            BoxShape.circle,
+                            shape: BoxShape.circle,
                           ),
                         ),
                       ),
@@ -162,17 +117,12 @@ class _ChatListScreenState
 
                   const CircleAvatar(
                     radius: 25,
-                    backgroundImage:
-                    AssetImage(
-                      'assets/profile.png',
-                    ),
+                    backgroundImage: AssetImage('assets/profile.png'),
                   ),
 
                   const Icon(
-                    Icons
-                        .keyboard_arrow_down_rounded,
-                    color:
-                    Color(0xFF123B7A),
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Color(0xFF123B7A),
                     size: 28,
                   ),
                 ],
@@ -182,31 +132,19 @@ class _ChatListScreenState
             // =================================================
             // TITRE
             // =================================================
-
             const Padding(
-              padding:
-              EdgeInsets.fromLTRB(
-                28,
-                25,
-                28,
-                18,
-              ),
+              padding: EdgeInsets.fromLTRB(28, 25, 28, 18),
               child: Align(
-                alignment:
-                Alignment.centerLeft,
+                alignment: Alignment.centerLeft,
                 child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     Text(
                       'Messages',
                       style: TextStyle(
-                        color:
-                        Color(0xFF123B7A),
+                        color: Color(0xFF123B7A),
                         fontSize: 40,
-                        fontWeight:
-                        FontWeight.w800,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
 
@@ -214,12 +152,8 @@ class _ChatListScreenState
 
                     Text(
                       'Restez en contact avec vos '
-                          'covoitureurs et amis !',
-                      style: TextStyle(
-                        color:
-                        Color(0xFF7893BA),
-                        fontSize: 17,
-                      ),
+                      'covoitureurs et amis !',
+                      style: TextStyle(color: Color(0xFF7893BA), fontSize: 17),
                     ),
                   ],
                 ),
@@ -229,56 +163,36 @@ class _ChatListScreenState
             // =================================================
             // RECHERCHE
             // =================================================
-
             Padding(
-              padding:
-              const EdgeInsets.symmetric(
-                horizontal: 28,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 28),
               child: TextField(
-                controller:
-                _searchController,
+                controller: _searchController,
 
                 onChanged: (value) {
                   setState(() {
-                    _search =
-                        value.toLowerCase();
+                    _search = value.toLowerCase();
                   });
                 },
 
-                decoration:
-                InputDecoration(
-                  hintText:
-                  'Rechercher une conversation...',
-                  hintStyle:
-                  const TextStyle(
-                    color:
-                    Color(0xFF7893BA),
+                decoration: InputDecoration(
+                  hintText: 'Rechercher une conversation...',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF7893BA),
                     fontSize: 16,
                   ),
 
-                  prefixIcon:
-                  const Icon(
+                  prefixIcon: const Icon(
                     Icons.search_rounded,
                     size: 31,
-                    color:
-                    Color(0xFF6085BA),
+                    color: Color(0xFF6085BA),
                   ),
 
                   filled: true,
-                  fillColor:
-                  const Color(
-                    0xFFEAF4FF,
-                  ),
+                  fillColor: const Color(0xFFEAF4FF),
 
-                  border:
-                  OutlineInputBorder(
-                    borderRadius:
-                    BorderRadius.circular(
-                      30,
-                    ),
-                    borderSide:
-                    BorderSide.none,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
@@ -289,127 +203,68 @@ class _ChatListScreenState
             // =================================================
             // CONVERSATIONS
             // =================================================
-
             Expanded(
               child: messagesAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
 
-                loading: () =>
-                const Center(
-                  child:
-                  CircularProgressIndicator(),
-                ),
-
-                error: (error, _) =>
-                    Center(
-                      child: Text(
-                        'Erreur : $error',
-                      ),
-                    ),
+                error: (error, _) => Center(child: Text('Erreur : $error')),
 
                 data: (messages) {
-
                   // Dernier message par contact
-                  final Map<
-                      String,
-                      Message> latest = {};
+                  final Map<String, Message> latest = {};
 
-                  for (final message
-                  in messages) {
-                    final contact =
-                    currentUser.uid;
+                  for (final message in messages) {
+                    final contact = currentUser!.uid;
 
-                    final previous =
-                    latest[contact];
+                    final previous = latest[contact];
 
-                    if (previous ==
-                        null ||
-                        message.timestamp
-                            .isAfter(
-                          previous.timestamp,
-                        )) {
-                      latest[contact] =
-                          message;
+                    if (previous == null ||
+                        message.timestamp.isAfter(previous.timestamp)) {
+                      latest[contact] = message;
                     }
                   }
 
                   final conversations =
-                  latest.values
-                      .where((message) {
-                    final contact =
-                    currentUser.uid;
+                      latest.values.where((message) {
+                          final contact = currentUser!.uid;
 
-                    return contact
-                        .toLowerCase()
-                        .contains(
-                      _search,
-                    ) ||
-                        message.text
-                            .toLowerCase()
-                            .contains(
-                          _search,
-                        );
-                  })
-                      .toList()
-                    ..sort(
-                          (a, b) => b.timestamp
-                          .compareTo(
-                        a.timestamp,
-                      ),
-                    );
+                          return contact.toLowerCase().contains(_search) ||
+                              message.text.toLowerCase().contains(_search);
+                        }).toList()
+                        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-                  if (conversations
-                      .isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Aucune conversation',
-                      ),
-                    );
+                  if (conversations.isEmpty) {
+                    return const Center(child: Text('Aucune conversation'));
                   }
 
                   return ListView.builder(
-                    padding:
-                    const EdgeInsets
-                        .symmetric(
-                      horizontal: 18,
-                    ),
-                    itemCount:
-                    conversations.length,
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    itemCount: conversations.length,
 
-                    itemBuilder:
-                        (context, index) {
+                    itemBuilder: (context, index) {
+                      final message = conversations[index];
 
-                      final message =
-                      conversations[
-                      index];
-
-                      final contact =
-                      _getContactId(
-                        message,
-                      );
+                      final contact = _getContactId(message);
 
                       final unread =
                           !message.isRead &&
-                              message.receiverId ==
-                                  currentUser.uid;
+                          message.receiverId == currentUser!.uid;
 
                       return ConversationCard(
                         contactId: contact,
                         message: message,
                         unread: unread,
-                        date: _formatDate(
-                          message.timestamp,
-                        ),
+                        date: _formatDate(message.timestamp),
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  ProviderScope(child: ChatDetailScreen(
-                                    currentUserId:
-                                    currentUser.uid,
-                                    contactId:
-                                    contact,
-                                  ),)
+                              builder: (_) => ProviderScope(
+                                child: ChatDetailScreen(
+                                  currentUserId: currentUser!.uid,
+                                  contactId: contact,
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -426,12 +281,7 @@ class _ChatListScreenState
       // =====================================================
       // BOTTOM NAVIGATION
       // =====================================================
-
-
-      bottomNavigationBar:
-      HomeBottomNavigation(
-        currentIndex: 3,
-      ),
+      bottomNavigationBar: HomeBottomNavigation(currentIndex: 3),
     );
   }
 }

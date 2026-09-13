@@ -4,7 +4,9 @@ import '../../domain/repositories/chat_repository.dart';
 import '../datasources/firebase_chat_datasource.dart';
 import '../model/message_model.dart';
 
-class ChatRepositoryImpl implements ChatRepository {
+class ChatRepositoryImpl
+    implements ChatRepository {
+
   final FirebaseChatDataSource dataSource;
 
   ChatRepositoryImpl({
@@ -28,7 +30,8 @@ class ChatRepositoryImpl implements ChatRepository {
         .map(
           (messages) => messages
           .map(
-            (message) => message.toEntity(),
+            (message) =>
+            message.toEntity(),
       )
           .toList(),
     );
@@ -47,7 +50,8 @@ class ChatRepositoryImpl implements ChatRepository {
         .map(
           (messages) => messages
           .map(
-            (message) => message.toEntity(),
+            (message) =>
+            message.toEntity(),
       )
           .toList(),
     );
@@ -69,6 +73,18 @@ class ChatRepositoryImpl implements ChatRepository {
       return;
     }
 
+    // ============================================================
+    // ENREGISTRER LE DEVICE DE L'EXPÉDITEUR
+    // ============================================================
+
+    await dataSource.registerDevice(
+      userId: senderId,
+    );
+
+    // ============================================================
+    // CRÉER LE MESSAGE
+    // ============================================================
+
     final message = MessageModel(
       id: '',
       senderId: senderId,
@@ -79,7 +95,13 @@ class ChatRepositoryImpl implements ChatRepository {
       type: 'text',
     );
 
-    await dataSource.sendMessage(message);
+    // ============================================================
+    // ENVOYER LE MESSAGE
+    // ============================================================
+
+    await dataSource.sendMessage(
+      message,
+    );
   }
 
   // ============================================================
@@ -91,7 +113,8 @@ class ChatRepositoryImpl implements ChatRepository {
     required String currentUserId,
     required String contactId,
   }) {
-    return dataSource.markConversationAsRead(
+    return dataSource
+        .markConversationAsRead(
       currentUserId: currentUserId,
       contactId: contactId,
     );

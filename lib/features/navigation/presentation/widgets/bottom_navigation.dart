@@ -69,7 +69,7 @@ class HomeBottomNavigation extends StatelessWidget {
 
                 _NavItem(
                   icon: Icons.person_outline_rounded,
-                  label: 'Profil',
+                  label: 'Profile',
                   selected: currentIndex == 4,
                   onTap: () => context.go('/profile'),
                 ),
