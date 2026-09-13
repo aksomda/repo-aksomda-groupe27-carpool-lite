@@ -31,7 +31,7 @@ class HomeBottomNavigation extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -69,9 +69,9 @@ class HomeBottomNavigation extends StatelessWidget {
 
                 _NavItem(
                   icon: Icons.person_outline_rounded,
-                  label: 'Profil',
+                  label: 'Profile',
                   selected: currentIndex == 4,
-                  onTap: () => context.go('/home'),
+                  onTap: () => context.go('/profile'),
                 ),
               ],
             ),
@@ -96,7 +96,7 @@ class HomeBottomNavigation extends StatelessWidget {
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.primary
-                              .withOpacity(0.25),
+                              .withValues(alpha: 0.25),
                           blurRadius: 15,
                           offset: const Offset(0, 6),
                         ),

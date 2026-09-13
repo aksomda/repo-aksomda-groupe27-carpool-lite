@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/auth/domain/entities/user_entity.dart';
 
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../navigation/presentation/widgets/bottom_navigation.dart';
@@ -34,7 +35,7 @@ class _ChatListScreenState
   String _search = '';
 
 
-  late final currentUser;
+  late final UserEntity? currentUser;
 
   @override
   void initState() {
@@ -52,7 +53,7 @@ class _ChatListScreenState
       Message message,
       ) {
     return message.senderId ==
-        currentUser.uid
+        currentUser!.uid
         ? message.receiverId
         : message.senderId;
   }
@@ -93,7 +94,7 @@ class _ChatListScreenState
     final messagesAsync =
     ref.watch(
       userMessagesProvider(
-        currentUser.uid,
+        currentUser!.uid,
       ),
     );
 
@@ -315,7 +316,7 @@ class _ChatListScreenState
                   for (final message
                   in messages) {
                     final contact =
-                    currentUser.uid;
+                    currentUser!.uid;
 
                     final previous =
                     latest[contact];
@@ -335,7 +336,7 @@ class _ChatListScreenState
                   latest.values
                       .where((message) {
                     final contact =
-                    currentUser.uid;
+                    currentUser!.uid;
 
                     return contact
                         .toLowerCase()
@@ -389,7 +390,7 @@ class _ChatListScreenState
                       final unread =
                           !message.isRead &&
                               message.receiverId ==
-                                  currentUser.uid;
+                                  currentUser!.uid;
 
                       return ConversationCard(
                         contactId: contact,
@@ -405,7 +406,7 @@ class _ChatListScreenState
                               builder: (_) =>
                                   ProviderScope(child: ChatDetailScreen(
                                     currentUserId:
-                                    currentUser.uid,
+                                    currentUser!.uid,
                                     contactId:
                                     contact,
                                   ),)
