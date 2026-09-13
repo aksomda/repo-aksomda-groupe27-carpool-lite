@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:repo_aksomda_groupe27_carpool_lite/features/auth/domain/entities/user_entity.dart';
 import 'package:repo_aksomda_groupe27_carpool_lite/features/auth/presentation/providers/auth_provider.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -25,7 +26,7 @@ class _HomeScreenState
     extends State<HomeScreen> {
 
 
-  void _searchTrip() {
+  void searchTrip() {
     final snackBar = SnackBar(
       content: const Text(
         'Recherche de trajets...',
@@ -40,7 +41,7 @@ class _HomeScreenState
         .showSnackBar(snackBar);
   }
 
-  late final user;
+  late final UserEntity? user;
 
   @override
   void initState() {
@@ -87,7 +88,7 @@ class _HomeScreenState
                         0,
                       ),
                       child: Text(
-                        'Bonjour ${user.name} ! 👋',
+                        'Bonjour ${user!.name} ! 👋',
                         style: TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w800,

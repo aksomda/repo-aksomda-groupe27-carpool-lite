@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
-import 'features/notification/data/services/notification_service.dart';
+
+import 'features/notification/presentation/services/notification_service.dart';
 import 'firebase_options.dart';
 
 // =======================================================
@@ -37,9 +38,7 @@ void main() async {
   // =======================================================
   // INITIALISATION NOTIFICATIONS
   // =======================================================
-  final notificationService = NotificationService();
-  await notificationService.initialize();
-
+  await NotificationService.instance.initialize();
   // =======================================================
   // TOKEN FCM
   // =======================================================
@@ -49,11 +48,25 @@ void main() async {
   // =======================================================
   // LISTENER EN PREMIER PLAN
   // =======================================================
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    debugPrint("Message reçu en premier plan !");
-    debugPrint("Titre: ${message.notification?.title}");
-    debugPrint("Corps: ${message.notification?.body}");
-  });
+  FirebaseMessaging.onMessage.listen(
+        (RemoteMessage message) async {
+      debugPrint('🔔 Message reçu au premier plan !');
+      debugPrint('Titre: ${message.notification?.title}');
+      debugPrint('Corps: ${message.notification?.body}');
+      debugPrint('Data: ${message.data}');
+
+      final notification = message.notification;
+
+      if (notification != null) {
+        await NotificationService.instance
+            .showLocalNotification(
+          title: notification.title ?? 'CarPool Lite',
+          body: notification.body ?? '',
+          payload: message.data,
+        );
+      }
+    },
+  );
 
   runApp(
     const ProviderScope(

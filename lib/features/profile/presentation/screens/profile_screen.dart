@@ -377,7 +377,7 @@ class _ProfileIdentity
                     boxShadow: [
                       BoxShadow(
                         color: Colors.blue
-                            .withOpacity(0.08),
+                            .withValues(alpha: 0.08),
                         blurRadius: 20,
                         offset:
                         const Offset(0, 8),
@@ -429,8 +429,8 @@ class _ProfileIdentity
                         boxShadow: [
                           BoxShadow(
                             color: Colors.blue
-                                .withOpacity(
-                                0.18),
+                                .withValues(alpha:
+                            0.18),
                             blurRadius: 10,
                           ),
                         ],
@@ -547,7 +547,7 @@ class _StatisticsCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color:
-            Colors.blue.withOpacity(0.07),
+            Colors.blue.withValues(alpha: 0.07),
             blurRadius: 22,
             offset:
             const Offset(0, 7),
@@ -701,7 +701,7 @@ class _ProfileMenuCard
         boxShadow: [
           BoxShadow(
             color:
-            Colors.blue.withOpacity(0.07),
+            Colors.blue.withValues(alpha: 0.07),
             blurRadius: 22,
             offset:
             const Offset(0, 7),
@@ -973,7 +973,7 @@ class _BottomSheetIcon
       width: 45,
       height: 45,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Icon(

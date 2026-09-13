@@ -12,6 +12,7 @@ class ConversationCard
   final VoidCallback onTap;
 
   const ConversationCard({
+    super.key,
     required this.contactId,
     required this.message,
     required this.unread,
@@ -33,7 +34,7 @@ class ConversationCard
         boxShadow: [
           BoxShadow(
             color: Colors.blue
-                .withOpacity(.04),
+                .withValues(alpha: .04),
             blurRadius: 15,
             offset:
             const Offset(0, 4),

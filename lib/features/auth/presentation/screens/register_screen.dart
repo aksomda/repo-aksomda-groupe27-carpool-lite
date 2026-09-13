@@ -951,7 +951,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             color: Theme.of(context)
                 .colorScheme
                 .primary
-                .withOpacity(0.4),
+                .withValues(alpha: 0.4),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -1204,7 +1204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               color: theme
                                   .colorScheme
                                   .primary
-                                  .withOpacity(0.25),
+                                  .withValues(alpha: 0.25),
                               blurRadius: 20,
                               offset:
                                   const Offset(0, 9),
@@ -1332,8 +1332,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black
-                                  .withOpacity(
-                                0.06,
+                                  .withValues(alpha:
+                              0.06,
                               ),
                               blurRadius: 25,
                               offset:
