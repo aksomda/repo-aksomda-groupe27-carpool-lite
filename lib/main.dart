@@ -9,7 +9,7 @@ void main() async {
   await Firebase.initializeApp();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
+  debugPrint('FIREBASE PROJECT = ${Firebase.app().options.projectId}');
   runApp(const ProviderScope(child: CarpoolLiteApp()));
 }
 

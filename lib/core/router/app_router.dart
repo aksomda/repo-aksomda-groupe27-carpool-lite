@@ -48,7 +48,7 @@ final GoRouter appRouter = GoRouter(
         // Historique
         GoRoute(
           path: 'history',
-          builder: (context, state) => const TripHistoryPage(userId: 'TEMP_USER_ID'),
+          builder: (context, state) => const TripHistoryPage(userId: 'CURRENT_USER_ID'),
         ),
       ],
     ),

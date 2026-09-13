@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../domain/entities/trip.dart';
 import '../../domain/usecases/cancel_trip.dart';
 import '../../domain/usecases/get_trip_history.dart';
 import '../../domain/usecases/publish_trip.dart';
 import '../../domain/usecases/search_trips.dart';
+
 import '../../data/datasources/trips_remote_datasource.dart';
 import '../../data/repositories/trip_repository_impl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../controllers/trip_controller.dart';
-import 'package:go_router/go_router.dart';
 
 class SearchTripsPage extends StatefulWidget {
   const SearchTripsPage({super.key});
@@ -24,6 +27,10 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
   final _universityController = TextEditingController();
 
   DateTime? _selectedDate;
+
+  bool _hasSearched = false;
+
+  int _passengers = 1;
 
   late final TripController _controller;
 
@@ -57,11 +64,17 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
   void dispose() {
     _departureController.dispose();
     _universityController.dispose();
+
     _controller.removeListener(_onControllerChanged);
+
     _controller.dispose();
 
     super.dispose();
   }
+
+  // =========================
+  // DATE
+  // =========================
 
   Future<void> _selectDate() async {
     final date = await showDatePicker(
@@ -78,6 +91,110 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
     }
   }
 
+  // =========================
+  // PASSAGERS
+  // =========================
+
+  Future<void> _selectPassengers() async {
+    int temporaryPassengers = _passengers;
+
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Nombre de passagers',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          onPressed: temporaryPassengers > 1
+                              ? () {
+                                  setModalState(() {
+                                    temporaryPassengers--;
+                                  });
+                                }
+                              : null,
+                          icon: const Icon(Icons.remove_circle_outline, size: 36),
+                        ),
+
+                        const SizedBox(width: 24),
+
+                        Text(
+                          '$temporaryPassengers',
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                        ),
+
+                        const SizedBox(width: 24),
+
+                        IconButton(
+                          onPressed: () {
+                            setModalState(() {
+                              temporaryPassengers++;
+                            });
+                          },
+                          icon: const Icon(
+                            Icons.add_circle_outline,
+                            size: 36,
+                            color: Color(0xFF1769E0),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _passengers = temporaryPassengers;
+                          });
+
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1769E0),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: const Text(
+                          'Confirmer',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // =========================
+  // RECHERCHE
+  // =========================
+
   Future<void> _search() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -87,8 +204,13 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Veuillez sélectionner une date.')));
+
       return;
     }
+
+    setState(() {
+      _hasSearched = true;
+    });
 
     await _controller.search(
       departureLabel: _departureController.text.trim(),
@@ -96,7 +218,9 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
       date: _selectedDate!,
     );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     if (_controller.errorMessage != null) {
       ScaffoldMessenger.of(
@@ -105,89 +229,64 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
     }
   }
 
+  // =========================
+  // PAGE
+  // =========================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Rechercher un trajet')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _departureController,
-                decoration: const InputDecoration(
-                  labelText: 'Lieu de départ',
-                  hintText: 'Ex : Patte d’Oie',
-                  prefixIcon: Icon(Icons.location_on),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Veuillez saisir le lieu de départ.';
-                  }
+      backgroundColor: const Color(0xFFF8F9FB),
 
-                  return null;
-                },
-              ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // HEADER
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+              child: SizedBox(
+                height: 90,
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 125,
+                      child: Image.asset('assets/images/carpool_logo.png', fit: BoxFit.contain),
+                    ),
 
-              const SizedBox(height: 16),
+                    const Spacer(),
 
-              TextFormField(
-                controller: _universityController,
-                decoration: const InputDecoration(
-                  labelText: 'Université',
-                  hintText: 'Ex : Université Joseph KI-ZERBO',
-                  prefixIcon: Icon(Icons.school),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Veuillez saisir l’université.';
-                  }
-
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _selectDate,
-                  icon: const Icon(Icons.calendar_today),
-                  label: Text(
-                    _selectedDate == null
-                        ? 'Choisir une date'
-                        : '${_selectedDate!.day}/'
-                              '${_selectedDate!.month}/'
-                              '${_selectedDate!.year}',
-                  ),
+                    const Icon(Icons.notifications_none, size: 28),
+                  ],
                 ),
               ),
+            ),
 
-              const SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildSearchSection(),
 
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _controller.isLoading ? null : _search,
-                  icon: const Icon(Icons.search),
-                  label: const Text('Rechercher'),
+                    const SizedBox(height: 28),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: _buildResults(),
+                    ),
+
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 24),
-
-              Expanded(child: _buildResults()),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 1,
+        type: BottomNavigationBarType.fixed,
+
         onTap: (index) {
           if (index == 0) {
             context.go('/trips/publish');
@@ -197,8 +296,9 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
             context.go('/trips/history');
           }
         },
+
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Publier'),
+          BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Publier'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Rechercher'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historique'),
         ],
@@ -206,58 +306,361 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
     );
   }
 
-  Widget _buildResults() {
-    if (_controller.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+  // =========================
+  // SECTION RECHERCHE
+  // =========================
 
-    if (_controller.trips.isEmpty) {
-      return const Center(child: Text('Aucun trajet trouvé.', style: TextStyle(fontSize: 16)));
-    }
+  Widget _buildSearchSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
 
-    return ListView.builder(
-      itemCount: _controller.trips.length,
-      itemBuilder: (context, index) {
-        final trip = _controller.trips[index];
+        borderRadius: BorderRadius.circular(28),
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.directions_car)),
-            title: Text(trip.departureLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+
+      child: Form(
+        key: _formKey,
+
+        child: Column(
+          children: [
+            // DEPART
+            TextFormField(
+              controller: _departureController,
+              decoration: InputDecoration(
+                labelText: 'DÉPART',
+                hintText: 'Ex : Université Joseph KI-ZERBO',
+
+                prefixIcon: const Icon(Icons.circle, size: 14, color: Colors.blue),
+
+                filled: true,
+
+                fillColor: const Color(0xFFF2F4F7),
+
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Veuillez saisir le lieu de départ.';
+                }
+
+                return null;
+              },
+            ),
+
+            const SizedBox(height: 14),
+
+            // ARRIVEE
+            TextFormField(
+              controller: _universityController,
+
+              decoration: InputDecoration(
+                labelText: 'ARRIVÉE',
+
+                hintText: 'Ex : Université Joseph KI-ZERBO',
+
+                prefixIcon: const Icon(Icons.circle, size: 14, color: Colors.orange),
+
+                filled: true,
+
+                fillColor: const Color(0xFFF2F4F7),
+
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Veuillez saisir l’université.';
+                }
+
+                return null;
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // DATE + PASSAGERS
+            Row(
               children: [
-                const SizedBox(height: 6),
+                Expanded(
+                  flex: 2,
 
-                Text(
-                  'Date : '
-                  '${trip.departureDateTime.day}/'
-                  '${trip.departureDateTime.month}/'
-                  '${trip.departureDateTime.year}',
+                  child: OutlinedButton.icon(
+                    onPressed: _selectDate,
+
+                    icon: const Icon(Icons.calendar_month),
+
+                    label: Text(
+                      _selectedDate == null
+                          ? 'Aujourd’hui'
+                          : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 58),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
                 ),
 
-                Text(
-                  'Heure : '
-                  '${trip.departureDateTime.hour.toString().padLeft(2, '0')}:'
-                  '${trip.departureDateTime.minute.toString().padLeft(2, '0')}',
-                ),
+                const SizedBox(width: 12),
 
-                Text(
-                  'Places disponibles : '
-                  '${trip.availableSeats}',
-                ),
+                // PASSAGERS
+                Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
 
-                Text(
-                  'Prix : '
-                  '${trip.pricePerSeat.toStringAsFixed(0)} FCFA',
+                    onTap: _selectPassengers,
+
+                    child: Container(
+                      height: 58,
+
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+
+                      child: Row(
+                        children: [
+                          const Icon(Icons.people_outline, color: Color(0xFF1769E0), size: 21),
+
+                          const SizedBox(width: 7),
+
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+
+                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                              children: [
+                                const Text(
+                                  'PASSAGERS',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+
+                                Text(
+                                  '$_passengers',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-            isThreeLine: true,
+
+            const SizedBox(height: 18),
+
+            // BOUTON RECHERCHER
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+
+              child: FilledButton.icon(
+                onPressed: _controller.isLoading ? null : _search,
+
+                icon: const Icon(Icons.search),
+
+                label: const Text(
+                  'Rechercher un trajet',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                ),
+
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF1769E0),
+
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // =========================
+  // RESULTATS
+  // =========================
+
+  Widget _buildResults() {
+    if (!_hasSearched) {
+      return const SizedBox.shrink();
+    }
+
+    if (_controller.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(40),
+
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // On garde uniquement les trajets
+    // ayant assez de places.
+    final availableTrips = _controller.trips
+        .where((trip) => trip.availableSeats >= _passengers)
+        .toList();
+
+    if (availableTrips.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(40),
+
+        child: Center(
+          child: Text(
+            'Aucun trajet avec assez de places.',
+            textAlign: TextAlign.center,
+
+            style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
-        );
-      },
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+
+      children: [
+        const Text(
+          'Trajets disponibles',
+
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+
+        const SizedBox(height: 18),
+
+        ...availableTrips.map((trip) => _buildTripCard(trip)),
+      ],
+    );
+  }
+
+  // =========================
+  // CARTE TRAJET
+  // =========================
+
+  Widget _buildTripCard(Trip trip) {
+    final time =
+        '${trip.departureDateTime.hour.toString().padLeft(2, '0')}:'
+        '${trip.departureDateTime.minute.toString().padLeft(2, '0')}';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+
+      padding: const EdgeInsets.all(16),
+
+      decoration: BoxDecoration(
+        color: Colors.white,
+
+        borderRadius: BorderRadius.circular(22),
+
+        border: Border.all(color: const Color(0xFFE7E7E7)),
+
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+
+            blurRadius: 10,
+
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+
+      child: Row(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFEAF2FF)),
+
+            child: const Icon(Icons.person, size: 34, color: Color(0xFF1769E0)),
+          ),
+
+          const SizedBox(width: 14),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+
+              children: [
+                Text(
+                  trip.departureLabel,
+
+                  maxLines: 1,
+
+                  overflow: TextOverflow.ellipsis,
+
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 4),
+
+                Text('${trip.availableSeats} place(s)', style: const TextStyle(color: Colors.grey)),
+
+                const SizedBox(height: 8),
+
+                Row(
+                  children: [
+                    Text(time, style: const TextStyle(fontWeight: FontWeight.bold)),
+
+                    const SizedBox(width: 14),
+
+                    Expanded(
+                      child: Text(
+                        '${trip.pricePerSeat.toStringAsFixed(0)} FCFA',
+
+                        overflow: TextOverflow.ellipsis,
+
+                        style: const TextStyle(
+                          color: Color(0xFF1769E0),
+
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 6),
+
+          const Icon(Icons.chevron_right, size: 28),
+        ],
+      ),
     );
   }
 }

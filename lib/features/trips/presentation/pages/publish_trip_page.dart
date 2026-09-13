@@ -4,13 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/trip.dart';
 import '../../domain/usecases/publish_trip.dart';
-import '../../data/datasources/trips_remote_datasource.dart';
-import '../../data/repositories/trip_repository_impl.dart';
-import '../controllers/trip_controller.dart';
-
 import '../../domain/usecases/search_trips.dart';
 import '../../domain/usecases/get_trip_history.dart';
 import '../../domain/usecases/cancel_trip.dart';
+
+import '../../data/datasources/trips_remote_datasource.dart';
+import '../../data/repositories/trip_repository_impl.dart';
+
+import '../controllers/trip_controller.dart';
 
 class PublishTripPage extends StatefulWidget {
   const PublishTripPage({super.key});
@@ -93,6 +94,7 @@ class _PublishTripPageState extends State<PublishTripPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Veuillez sélectionner une date et une heure.')));
+
       return;
     }
 
@@ -118,7 +120,9 @@ class _PublishTripPageState extends State<PublishTripPage> {
 
     await _controller.publish(trip);
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     if (_controller.errorMessage == null) {
       ScaffoldMessenger.of(
@@ -136,143 +140,393 @@ class _PublishTripPageState extends State<PublishTripPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Publier un trajet')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _departureController,
-                decoration: const InputDecoration(
-                  labelText: 'Lieu de départ',
-                  hintText: 'Ex : Patte d’Oie',
-                  border: OutlineInputBorder(),
+      backgroundColor: const Color(0xFFF8F9FB),
+
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
+
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+
+                  children: [
+                    const Text(
+                      'Publier un trajet',
+                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Text(
+                      'Proposez votre trajet à d’autres étudiants.',
+                      style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    _buildPublishCard(),
+                  ],
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Veuillez saisir le lieu de départ.';
-                  }
-                  return null;
-                },
               ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _universityController,
-                decoration: const InputDecoration(
-                  labelText: 'Université',
-                  hintText: 'Ex : Université Joseph KI-ZERBO',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Veuillez saisir l’université.';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              ListTile(
-                title: Text(
-                  _selectedDate == null
-                      ? 'Choisir une date'
-                      : '${_selectedDate!.day}/'
-                            '${_selectedDate!.month}/'
-                            '${_selectedDate!.year}',
-                ),
-                leading: const Icon(Icons.calendar_today),
-                onTap: _selectDate,
-              ),
-
-              ListTile(
-                title: Text(
-                  _selectedTime == null ? 'Choisir une heure' : _selectedTime!.format(context),
-                ),
-                leading: const Icon(Icons.access_time),
-                onTap: _selectTime,
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _seatsController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre de places',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  final seats = int.tryParse(value ?? '');
-
-                  if (seats == null || seats <= 0) {
-                    return 'Entrez un nombre de places valide.';
-                  }
-
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _priceController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Prix par place',
-                  suffixText: 'FCFA',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  final price = double.tryParse(value ?? '');
-
-                  if (price == null || price < 0) {
-                    return 'Entrez un prix valide.';
-                  }
-
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 24),
-
-              ListenableBuilder(
-                listenable: _controller,
-                builder: (context, child) {
-                  return FilledButton(
-                    onPressed: _controller.isLoading ? null : _publish,
-
-                    child: _controller.isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text('Publier le trajet'),
-                  );
-                },
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        onTap: (index) {
-          if (index == 0) {
-            context.go('/trips/publish');
-          } else if (index == 1) {
-            context.go('/trips/search');
-          } else if (index == 2) {
-            context.go('/trips/history');
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Publier'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Rechercher'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historique'),
+
+      bottomNavigationBar: _buildBottomNavigation(),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+
+      child: SizedBox(
+        height: 90,
+
+        child: Row(
+          children: [
+            SizedBox(
+              width: 125,
+
+              child: Image.asset('assets/images/carpool_logo.png', fit: BoxFit.contain),
+            ),
+
+            const Spacer(),
+
+            const Icon(Icons.notifications_none, size: 28),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPublishCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+
+      decoration: BoxDecoration(
+        color: Colors.white,
+
+        borderRadius: BorderRadius.circular(28),
+
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+
+            blurRadius: 20,
+
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
+
+      child: Form(
+        key: _formKey,
+
+        child: Column(
+          children: [
+            _buildLocationField(
+              controller: _departureController,
+              label: 'DÉPART',
+              hint: 'Votre lieu de départ',
+              color: Colors.blue,
+            ),
+
+            const SizedBox(height: 14),
+
+            _buildLocationField(
+              controller: _universityController,
+              label: 'ARRIVÉE',
+              hint: 'Université de destination',
+              color: Colors.orange,
+            ),
+
+            const SizedBox(height: 18),
+
+            Row(
+              children: [
+                Expanded(child: _buildDateBox()),
+
+                const SizedBox(width: 12),
+
+                Expanded(child: _buildTimeBox()),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _seatsController,
+
+                    keyboardType: TextInputType.number,
+
+                    decoration: _inputDecoration('PLACES', Icons.people_outline),
+
+                    validator: (value) {
+                      final seats = int.tryParse(value ?? '');
+
+                      if (seats == null || seats <= 0) {
+                        return 'Nombre invalide';
+                      }
+
+                      return null;
+                    },
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: TextFormField(
+                    controller: _priceController,
+
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+
+                    decoration: _inputDecoration('PRIX', Icons.payments_outlined, suffix: 'FCFA'),
+
+                    validator: (value) {
+                      final price = double.tryParse(value ?? '');
+
+                      if (price == null || price < 0) {
+                        return 'Prix invalide';
+                      }
+
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 26),
+
+            ListenableBuilder(
+              listenable: _controller,
+
+              builder: (context, child) {
+                return SizedBox(
+                  width: double.infinity,
+
+                  height: 56,
+
+                  child: FilledButton.icon(
+                    onPressed: _controller.isLoading ? null : _publish,
+
+                    icon: _controller.isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.add_road),
+
+                    label: Text(
+                      _controller.isLoading ? 'Publication...' : 'Publier le trajet',
+
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                    ),
+
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF1769E0),
+
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required Color color,
+  }) {
+    return TextFormField(
+      controller: controller,
+
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+
+        prefixIcon: Icon(Icons.circle, size: 14, color: color),
+
+        filled: true,
+
+        fillColor: const Color(0xFFF2F4F7),
+
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+
+          borderSide: BorderSide.none,
+        ),
+      ),
+
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'Champ obligatoire';
+        }
+
+        return null;
+      },
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon, {String? suffix}) {
+    return InputDecoration(
+      labelText: label,
+
+      prefixIcon: Icon(icon, color: const Color(0xFF1769E0)),
+
+      suffixText: suffix,
+
+      filled: true,
+
+      fillColor: const Color(0xFFF2F4F7),
+
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
+  Widget _buildDateBox() {
+    return InkWell(
+      onTap: _selectDate,
+
+      borderRadius: BorderRadius.circular(16),
+
+      child: Container(
+        height: 64,
+
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+
+          borderRadius: BorderRadius.circular(16),
+        ),
+
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_month_outlined, color: Color(0xFF1769E0)),
+
+            const SizedBox(width: 8),
+
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+
+                crossAxisAlignment: CrossAxisAlignment.start,
+
+                children: [
+                  const Text('DATE', style: TextStyle(fontSize: 10, color: Colors.grey)),
+
+                  Text(
+                    _selectedDate == null
+                        ? 'Choisir'
+                        : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+
+                    overflow: TextOverflow.ellipsis,
+
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeBox() {
+    return InkWell(
+      onTap: _selectTime,
+
+      borderRadius: BorderRadius.circular(16),
+
+      child: Container(
+        height: 64,
+
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+
+          borderRadius: BorderRadius.circular(16),
+        ),
+
+        child: Row(
+          children: [
+            const Icon(Icons.access_time, color: Color(0xFF1769E0)),
+
+            const SizedBox(width: 8),
+
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+
+                crossAxisAlignment: CrossAxisAlignment.start,
+
+                children: [
+                  const Text('HEURE', style: TextStyle(fontSize: 10, color: Colors.grey)),
+
+                  Text(
+                    _selectedTime == null ? 'Choisir' : _selectedTime!.format(context),
+
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigation() {
+    return BottomNavigationBar(
+      currentIndex: 0,
+
+      type: BottomNavigationBarType.fixed,
+
+      onTap: (index) {
+        if (index == 0) {
+          context.go('/trips/publish');
+        } else if (index == 1) {
+          context.go('/trips/search');
+        } else if (index == 2) {
+          context.go('/trips/history');
+        }
+      },
+
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Publier'),
+
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Rechercher'),
+
+        BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historique'),
+      ],
     );
   }
 }

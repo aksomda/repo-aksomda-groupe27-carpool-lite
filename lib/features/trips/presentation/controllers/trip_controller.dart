@@ -34,7 +34,8 @@ class TripController extends ChangeNotifier {
       trips = [...trips, createdTrip];
       errorMessage = null;
     } catch (e) {
-      errorMessage = 'Impossible de publier le trajet.';
+      errorMessage = e.toString();
+      debugPrint('ERREUR PUBLICATION TRAJET : $e');
     } finally {
       _stopLoading();
     }
@@ -56,7 +57,8 @@ class TripController extends ChangeNotifier {
 
       errorMessage = null;
     } catch (e) {
-      errorMessage = 'Impossible de rechercher les trajets.';
+      errorMessage = e.toString();
+      debugPrint('ERREUR RECHERCHE TRAJET : $e');
     } finally {
       _stopLoading();
     }
@@ -70,7 +72,8 @@ class TripController extends ChangeNotifier {
 
       errorMessage = null;
     } catch (e) {
-      errorMessage = 'Impossible de charger l’historique.';
+      errorMessage = e.toString();
+      debugPrint('ERREUR HISTORIQUE TRAJET : $e');
     } finally {
       _stopLoading();
     }
