@@ -27,12 +27,18 @@ class UfrRemoteDataSource {
     await _timedFuture(_collection.doc(id).update({'isDeleted': true}));
   }
 
+  // Le filtre "isDeleted" est appliqué côté client (voir
+  // campus_remote_datasource.dart pour le détail) : une requête
+  // `.where('isDeleted', isEqualTo: false)` exclurait silencieusement
+  // les documents où ce champ est absent.
   Stream<List<UfrModel>> getUfrs() {
     return _collection
-        .where('isDeleted', isEqualTo: false)
         .snapshots()
         .timeout(kFirestoreTimeout, onTimeout: (sink) => sink.addError(_timeoutMessage))
-        .map((snapshot) => snapshot.docs.map(UfrModel.fromFirestore).toList());
+        .map((snapshot) => snapshot.docs
+            .map(UfrModel.fromFirestore)
+            .where((ufr) => !ufr.isDeleted)
+            .toList());
   }
 
   Future<T> _timedFuture<T>(Future<T> future) async {
