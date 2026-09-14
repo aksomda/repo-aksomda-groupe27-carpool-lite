@@ -28,13 +28,25 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Écriture réservée à l'app (création de la demande d'email) ; la
-    // lecture/traitement réel est fait côté extension Firebase "Trigger
+    // Écriture réservée à l'app (création de la demande d'email) ; 
+    // la lecture/traitement réel est fait côté extension Firebase "Trigger
     // Email" avec les droits admin, donc pas besoin d'autoriser la lecture
     // ici.
     match /mail/{docId} {
       allow create: if request.auth != null;
       allow read, update, delete: if false;
+    }
+
+    // Un avis ne peut être créé que par son auteur (reviewerId ==
+    // uid connecté) ; une fois publié, il n'est ni modifiable ni
+    // supprimable par un client (évite qu'un utilisateur trafique sa
+    // propre note a posteriori). La lecture reste ouverte aux comptes
+    // authentifiés pour permettre l'affichage des stats/avis reçus.
+    match /reviews/{reviewId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.reviewerId == request.auth.uid;
+      allow update, delete: if false;
     }
 
     match /{document=**} {

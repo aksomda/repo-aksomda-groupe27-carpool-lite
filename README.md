@@ -19,17 +19,27 @@ communique avec firebase.
   partagent le même refresh en cours.
 - Suppression des tokens lorsque le refresh échoue ou lors de la déconnexion.
 
-### Écrans métier
+### Écrans métier Etudiant
 
 1. Tableau de bord.
-2. Menu.
-3. Commandes.
-4. Stocks.
+2. Trajets.
+3. Véhicules.
+4. Evalution des conducteurs.
 5. Personnel / serveuses.
 
 Les cinq écrans métier consomment des données provenant de l'API et disposent d'une
 stratégie de cache pour les lectures.
 
+
+### Écrans métier Administrateur
+
+1. Tableau de bord.
+2. Gestion des université.
+3. Gestion des campus.
+4. Gestion des Ufrs.
+5. Gestion des classes.
+6. Trajets
+7. Véhicules
 ---
 
 ## 2. Architecture
