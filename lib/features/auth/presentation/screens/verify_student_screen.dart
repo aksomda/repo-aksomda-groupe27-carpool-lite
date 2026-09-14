@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
 import '../widgets/auth_text_field.dart';
@@ -187,30 +188,111 @@ class _VerifyStudentScreenState extends State<VerifyStudentScreen> {
   }
 }
 
-/// Écran temporaire après vérification (ou report de la vérification).
-/// Il sera remplacé par le vrai écran d'accueil de CarPool Lite
-/// lorsque le routing global de l'application sera connecté.
+/// Écran de bienvenue affiché après vérification (ou report de la
+/// vérification). Combine la maquette de marque de CarPool Lite avec le
+/// message de bienvenue et un accès direct à l'espace étudiant.
 class _VerificationSuccessScreen extends StatelessWidget {
   const _VerificationSuccessScreen();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('CarPool Lite'),
-      ),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Bienvenue sur CarPool Lite !',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          // ============================================================
+          // MAQUETTE / LOGO
+          // ============================================================
+          Expanded(
+            flex: 6,
+            child: Image.asset(
+              'assets/splash/splash_screen.png',
+              width: double.infinity,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
             ),
           ),
-        ),
+
+          // ============================================================
+          // MESSAGE DE BIENVENUE + ACCÈS À L'APPLICATION
+          // ============================================================
+          Expanded(
+            flex: 4,
+            child: Transform.translate(
+              offset: const Offset(0, -28),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(32),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 24,
+                      offset: Offset(0, -8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Bienvenue sur CarPool Lite !',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 23,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF11224E),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Text(
+                      'Votre compte est prêt. Trouvez ou proposez un '
+                      'trajet avec d\'autres étudiants dès maintenant.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.4,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+
+                    const SizedBox(height: 26),
+
+                    SizedBox(
+                      height: 54,
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.go('/home'),
+                        icon: const Icon(Icons.arrow_forward_rounded),
+                        label: const Text(
+                          'Accéder à mon espace',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          backgroundColor: const Color(0xFF1468F5),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

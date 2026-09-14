@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../campus/data/models/campus_model.dart';
+import '../../../campus/data/repositories/campus_repository.dart';
+import '../../../universities/data/models/university_model.dart';
+import '../../../universities/data/repositories/university_repository.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_text_field.dart';
 import '../../domain/entities/user_entity.dart';
@@ -36,8 +40,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // INFORMATIONS UNIVERSITAIRES
   // ============================================================
 
-  String? _selectedUniversity;
-  String? _selectedCampus;
+  String? _selectedUniversityId;
+  String? _selectedCampusId;
 
   // ============================================================
   // INFORMATIONS DU COMPTE
@@ -53,29 +57,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-
-  // ============================================================
-  // LISTE DES UNIVERSITÉS
-  // ============================================================
-
-  final List<String> _universities = [
-    'Université Nongo Conakry',
-    'Université Gamal Abdel Nasser de Conakry',
-    'Université Général Lansana Conté de Sonfonia',
-    'Université Mahatma Gandhi',
-    'Université Kofi Annan de Guinée',
-  ];
-
-  // ============================================================
-  // LISTE DES CAMPUS
-  // ============================================================
-
-  final List<String> _campuses = [
-    'Campus principal',
-    'Campus de Lambanyi',
-    'Campus de Sonfonia',
-    'Campus de Ratoma',
-  ];
 
   // ============================================================
   // DISPOSE
@@ -116,12 +97,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // ============================================================
 
   bool _validateStep2() {
-    if (_selectedUniversity == null) {
+    if (_selectedUniversityId == null) {
       _showMessage('Veuillez sélectionner votre université.');
       return false;
     }
 
-    if (_selectedCampus == null) {
+    if (_selectedCampusId == null) {
       _showMessage('Veuillez sélectionner votre campus.');
       return false;
     }
@@ -213,7 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (_selectedUniversity == null) {
+    if (_selectedUniversityId == null) {
       _showMessage('Veuillez sélectionner votre université.');
       setState(() {
         _currentStep = 1;
@@ -221,7 +202,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (_selectedCampus == null) {
+    if (_selectedCampusId == null) {
       _showMessage('Veuillez sélectionner votre campus.');
       setState(() {
         _currentStep = 1;
@@ -238,8 +219,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    final universityId = _selectedUniversity!;
-    final campusId = _selectedCampus!;
+    // IDs réels des documents Firestore (collections "universities" et
+    // "campuses"), et non les noms affichés dans les menus déroulants.
+    final universityId = _selectedUniversityId!;
+    final campusId = _selectedCampusId!;
     final sex = _selectedSex!;
 
     // ==========================================================
@@ -469,48 +452,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // ============================================================
 
   Widget _buildUniversityDropdown() {
-    return DropdownButtonFormField<String>(
-      initialValue: _selectedUniversity,
-      decoration: InputDecoration(
-        labelText: 'Université',
-        hintText: 'Sélectionnez votre université',
-        prefixIcon: const Icon(Icons.account_balance_outlined),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-      ),
-      items: _universities.map((university) {
-        return DropdownMenuItem<String>(
-          value: university,
-          child: SizedBox(
-            width: 280,
-            child: Text(university, overflow: TextOverflow.ellipsis),
+    return StreamBuilder<List<UniversityModel>>(
+      stream: UniversityRepository.instance.getUniversities(),
+      builder: (context, snapshot) {
+        final universities = snapshot.data ?? [];
+
+        return DropdownButtonFormField<String>(
+          initialValue: _selectedUniversityId,
+          decoration: InputDecoration(
+            labelText: 'Université',
+            hintText: 'Sélectionnez votre université',
+            prefixIcon: const Icon(Icons.account_balance_outlined),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
           ),
+          items: universities.map((university) {
+            return DropdownMenuItem<String>(
+              // La valeur est l'ID réel du document Firestore, jamais le nom.
+              value: university.id,
+              child: SizedBox(
+                width: 280,
+                child: Text(university.name, overflow: TextOverflow.ellipsis),
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedUniversityId = value;
+
+              // Le campus est réinitialisé lorsqu'une
+              // autre université est sélectionnée.
+              _selectedCampusId = null;
+            });
+          },
+          validator: (value) {
+            if (value == null) {
+              return 'Veuillez sélectionner votre université.';
+            }
+
+            return null;
+          },
         );
-      }).toList(),
-      onChanged: (value) {
-        setState(() {
-          _selectedUniversity = value;
-
-          // Le campus est réinitialisé lorsqu'une
-          // autre université est sélectionnée.
-          _selectedCampus = null;
-        });
-      },
-      validator: (value) {
-        if (value == null) {
-          return 'Veuillez sélectionner votre université.';
-        }
-
-        return null;
       },
     );
   }
@@ -520,43 +511,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // ============================================================
 
   Widget _buildCampusDropdown() {
-    return DropdownButtonFormField<String>(
-      initialValue: _selectedCampus,
-      decoration: InputDecoration(
-        labelText: 'Campus',
-        hintText: 'Sélectionnez votre campus',
-        prefixIcon: const Icon(Icons.location_city_outlined),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-      ),
-      items: _campuses.map((campus) {
-        return DropdownMenuItem<String>(
-          value: campus,
-          child: Text(campus, overflow: TextOverflow.ellipsis),
-        );
-      }).toList(),
-      onChanged: _selectedUniversity == null
-          ? null
-          : (value) {
-              setState(() {
-                _selectedCampus = value;
-              });
-            },
-      validator: (value) {
-        if (value == null) {
-          return 'Veuillez sélectionner votre campus.';
-        }
+    return StreamBuilder<List<CampusModel>>(
+      stream: CampusRepository.instance.getCampuses(),
+      builder: (context, snapshot) {
+        final campuses = (snapshot.data ?? [])
+            .where(
+              (campus) =>
+                  !campus.isDeleted &&
+                  campus.universityId == _selectedUniversityId,
+            )
+            .toList();
 
-        return null;
+        return DropdownButtonFormField<String>(
+          initialValue: _selectedCampusId,
+          decoration: InputDecoration(
+            labelText: 'Campus',
+            hintText: 'Sélectionnez votre campus',
+            prefixIcon: const Icon(Icons.location_city_outlined),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+          ),
+          items: campuses.map((campus) {
+            return DropdownMenuItem<String>(
+              // La valeur est l'ID réel du document Firestore, jamais le nom.
+              value: campus.id,
+              child: Text(campus.name, overflow: TextOverflow.ellipsis),
+            );
+          }).toList(),
+          onChanged: _selectedUniversityId == null
+              ? null
+              : (value) {
+                  setState(() {
+                    _selectedCampusId = value;
+                  });
+                },
+          validator: (value) {
+            if (value == null) {
+              return 'Veuillez sélectionner votre campus.';
+            }
+
+            return null;
+          },
+        );
       },
     );
   }

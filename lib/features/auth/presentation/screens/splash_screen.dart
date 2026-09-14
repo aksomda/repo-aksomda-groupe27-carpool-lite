@@ -11,7 +11,7 @@ class SplashScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SizedBox.expand(
         child: Image.asset(
-          'assets/images/splash_screen.png',
+          'assets/splash/splash_screen.png',
           fit: BoxFit.cover,
         ),
       ),

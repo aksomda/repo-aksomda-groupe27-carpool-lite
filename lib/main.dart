@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/firebase/firebase_status.dart';
 import 'core/router/app_router.dart';
 
 import 'features/notification/presentation/services/notification_service.dart';
@@ -15,9 +16,7 @@ import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint("Message reçu en arrière-plan : ${message.messageId}");
 }
 
@@ -27,9 +26,21 @@ void main() async {
   // =======================================================
   // FIREBASE
   // =======================================================
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // FirebaseStatus est lu par tous les dépôts (universités, campus,
+  // formations, UFR, niveaux académiques...) pour savoir s'ils doivent
+  // utiliser Firestore ou basculer sur leur source de données locale.
+  // Sans cet appel à markAvailable(), ils restent TOUJOURS en mode
+  // hors-ligne, même quand Firebase est correctement initialisé.
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    FirebaseStatus.markAvailable();
+  } catch (e, stackTrace) {
+    FirebaseStatus.markUnavailable();
+    debugPrint('⚠️ Firebase indisponible, bascule en mode hors-ligne : $e');
+    debugPrint('$stackTrace');
+  }
 
   // =======================================================
   // NOTIFICATIONS (FCM)
@@ -47,7 +58,9 @@ void main() async {
     // Cloud Messaging > Configuration web > Génération de paire de clés).
     // Remplacez la valeur ci-dessous par votre propre clé publique.
     final fcmToken = await FirebaseMessaging.instance.getToken(
-      vapidKey: kIsWeb ? 'REMPLACER_PAR_VOTRE_CLE_VAPID' : null,
+      vapidKey: kIsWeb
+          ? 'BLWOny4p88o2cloWcLqYyUxiYtEDvKQ-frIfnWEvJeCWBHvu3i6lyBFlNgBrcwyl0k39JaYqTH3mhBq182Dpmm0'
+          : null,
     );
     debugPrint("FCM Token: $fcmToken");
 
@@ -72,11 +85,7 @@ void main() async {
     debugPrint('$stackTrace');
   }
 
-  runApp(
-    const ProviderScope(
-      child: CarpoolLiteApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: CarpoolLiteApp()));
 }
 
 class CarpoolLiteApp extends StatelessWidget {
