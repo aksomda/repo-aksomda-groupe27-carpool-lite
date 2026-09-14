@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../navigation/presentation/widgets/bottom_navigation.dart';
+// import '../../../navigation/presentation/widgets/bottom_navigation.dart'; // masqué temporairement
 import '../../domain/entities/message.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/conversationcard.dart';
@@ -278,9 +278,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       ),
 
       // =====================================================
-      // BOTTOM NAVIGATION
+      // BOTTOM NAVIGATION (masquée temporairement)
       // =====================================================
-      bottomNavigationBar: HomeBottomNavigation(currentIndex: 3),
+      // bottomNavigationBar: HomeBottomNavigation(currentIndex: 3),
     );
   }
 }

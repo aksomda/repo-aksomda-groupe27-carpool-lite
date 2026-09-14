@@ -65,13 +65,7 @@ class HomeBottomNavigation extends StatelessWidget {
                   label: 'Messages',
                   selected: currentIndex == 3,
                   onTap: () => context.go('/chat'),
-                ),
-
-                _NavItem(
-                  icon: Icons.person_outline_rounded,
-                  label: 'Profile',
-                  selected: currentIndex == 4,
-                  onTap: () => context.go('/profile'),
+                  flex: 2,
                 ),
               ],
             ),
@@ -123,17 +117,20 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final int flex;
 
   const _NavItem({
     required this.icon,
     required this.label,
     required this.selected,
     required this.onTap,
+    this.flex = 1,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
+      flex: flex,
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
