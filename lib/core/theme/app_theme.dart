@@ -2,16 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 
-/// Thème(s) de l'application.
-///
-/// Objectif : que TOUS les écrans (déjà faits ou à venir par le reste du
-/// groupe) héritent automatiquement de la charte CarPool Lite (couleurs du
-/// logo, boutons arrondis, champs de saisie gris clair, cartes arrondies...)
-/// simplement en utilisant les widgets Material par défaut
-/// (ElevatedButton, TextField/TextFormField, Card, AppBar, ...) sans avoir à
-/// redéfinir les couleurs à la main dans chaque écran.
-///
-/// Utilisation dans main.dart : `theme: AppTheme.light`.
 class AppTheme {
   AppTheme._();
 
@@ -33,19 +23,11 @@ class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
       primaryColor: AppColors.primary,
-
-      // ---------------------------------------------------------
-      // TYPOGRAPHIE
-      // ---------------------------------------------------------
       textTheme: base.textTheme.apply(
         bodyColor: AppColors.textPrimary,
         displayColor: AppColors.textPrimary,
       ),
 
-      // ---------------------------------------------------------
-      // BARRE D'APPLICATION — fond blanc, texte marine, sans ombre dure
-      // (cf. en-tête "CarPool Lite" des maquettes)
-      // ---------------------------------------------------------
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.navy,
@@ -59,10 +41,6 @@ class AppTheme {
         iconTheme: IconThemeData(color: AppColors.navy),
       ),
 
-      // ---------------------------------------------------------
-      // BOUTONS PRINCIPAUX — pilule bleue, cf. "Rechercher un trajet",
-      // "Se connecter" dans les maquettes.
-      // ---------------------------------------------------------
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -96,10 +74,6 @@ class AppTheme {
         foregroundColor: Colors.white,
       ),
 
-      // ---------------------------------------------------------
-      // CHAMPS DE SAISIE — fond gris clair, sans bordure visible,
-      // coins arrondis (cf. "Départ" / "Arrivée" sur l'accueil).
-      // ---------------------------------------------------------
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.inputFill,
@@ -123,10 +97,6 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.error, width: 1.2),
         ),
       ),
-
-      // ---------------------------------------------------------
-      // CARTES — trajets disponibles, profil, messages...
-      // ---------------------------------------------------------
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
@@ -138,10 +108,6 @@ class AppTheme {
       ),
 
       dividerTheme: const DividerThemeData(color: AppColors.border, thickness: 1),
-
-      // ---------------------------------------------------------
-      // NAVIGATION DU BAS — Accueil / Trajet / Message / Profil
-      // ---------------------------------------------------------
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.surface,
         selectedItemColor: AppColors.primary,
@@ -168,9 +134,6 @@ class AppTheme {
         }),
       ),
 
-      // ---------------------------------------------------------
-      // AUTRES
-      // ---------------------------------------------------------
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected) ? AppColors.primary : Colors.transparent,

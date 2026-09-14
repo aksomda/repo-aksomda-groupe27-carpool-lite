@@ -17,11 +17,13 @@ import '../../features/universities/domain/usecases/get_universities_usecase.dar
 import '../../features/universities/domain/usecases/add_university_usecase.dart';
 import '../../features/universities/presentation/providers/university_provider.dart';
 
-
-/// Point unique de câblage manuel des dépendances (pas d'injection de code
-/// généré : on construit ici, une seule fois, les datasources → repository
-/// → usecases → providers, à partir des instances Firebase déjà
-/// initialisées dans main.dart).
+// PROFILE
+import '../../features/profile/data/datasources/profile_remote_datasource.dart';
+import '../../features/profile/data/repositories/profile_repository_impl.dart';
+import '../../features/profile/domain/usecases/get_profile_usecase.dart';
+import '../../features/profile/domain/usecases/update_profile_usecase.dart';
+import '../../features/profile/domain/usecases/profile_photo_usecase.dart';
+import '../../features/profile/presentation/providers/profile_provider.dart';
 class Injector {
   Injector._();
 
@@ -32,25 +34,43 @@ class Injector {
     ),
   );
 
-  /// Instance unique partagée par tout l'arbre de routes : la session de
-  /// l'utilisateur (connecté ou non) doit rester la même d'un écran à
-  /// l'autre.
+  /// Instance unique partagée par tout l'arbre de routes.
   static final AuthProvider authProvider = AuthProvider(
     signInUserCase: SignInUserCase(authRepository),
     signUpUserCase: SignUpUserCase(authRepository),
     verifyStudentUseCase: VerifyStudentUseCase(authRepository),
-    sendEmailVerificationUseCase: SendEmailVerificationUseCase(authRepository),
-    checkEmailVerificationUseCase: CheckEmailVerificationUseCase(authRepository),
+    sendEmailVerificationUseCase:
+        SendEmailVerificationUseCase(authRepository),
+    checkEmailVerificationUseCase:
+        CheckEmailVerificationUseCase(authRepository),
     authRepository: authRepository,
   );
 
   static UniversityProvider createUniversityProvider() {
     final repository = UniversityRepositoryImpl(
-      UniversityRemoteDataSource(firestore: FirebaseFirestore.instance),
+      UniversityRemoteDataSource(
+        firestore: FirebaseFirestore.instance,
+      ),
     );
+
     return UniversityProvider(
       getUniversitiesUseCase: GetUniversitiesUseCase(repository),
       addUniversityUseCase: AddUniversityUseCase(repository),
     );
   }
+
+  // ============================================================
+  // PROFILE
+  // ============================================================
+
+static ProfileProvider createProfileProvider() {
+  final repository = ProfileRepositoryImpl(
+    ProfileRemoteDataSource(firestore: FirebaseFirestore.instance),
+  );
+  return ProfileProvider(
+    getProfileUseCase: GetProfileUseCase(repository),
+    updateProfileUseCase: UpdateProfileUseCase(repository),
+    updateProfilePhotoUseCase: UpdateProfilePhotoUseCase(repository),
+  );
+}
 }
