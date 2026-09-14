@@ -13,6 +13,11 @@ import '../../data/repositories/trip_repository_impl.dart';
 
 import '../controllers/trip_controller.dart';
 
+// VEHICLES
+import '../../../vehicles/domain/entities/vehicle.dart';
+import '../../../vehicles/data/datasources/vehicles_remote_datasource.dart';
+import '../../../vehicles/data/repositories/vehicle_repository_impl.dart';
+
 class PublishTripPage extends StatefulWidget {
   const PublishTripPage({super.key});
 
@@ -24,8 +29,11 @@ class _PublishTripPageState extends State<PublishTripPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _departureController = TextEditingController();
+
   final _universityController = TextEditingController();
+
   final _seatsController = TextEditingController();
+
   final _priceController = TextEditingController();
 
   DateTime? _selectedDate;
@@ -33,38 +41,118 @@ class _PublishTripPageState extends State<PublishTripPage> {
 
   late final TripController _controller;
 
+  // =========================
+  // VEHICLES
+  // =========================
+
+  List<Vehicle> _vehicles = [];
+
+  String? _selectedVehicleId;
+
+  bool _isLoadingVehicles = false;
+
+  String? _vehicleError;
+
   @override
   void initState() {
     super.initState();
 
     final firestore = FirebaseFirestore.instance;
+
     final remoteDataSource = TripsRemoteDataSource(firestore);
+
     final repository = TripRepositoryImpl(remoteDataSource);
 
     _controller = TripController(
       publishTrip: PublishTrip(repository),
+
       searchTrips: SearchTrips(repository),
+
       getTripHistory: GetTripHistory(repository),
+
       cancelTrip: CancelTrip(repository),
     );
+
+    _loadVehicles();
   }
 
   @override
   void dispose() {
     _departureController.dispose();
+
     _universityController.dispose();
+
     _seatsController.dispose();
+
     _priceController.dispose();
+
     _controller.dispose();
 
     super.dispose();
   }
 
+  // =========================
+  // CHARGEMENT VEHICULES
+  // =========================
+
+  Future<void> _loadVehicles() async {
+    setState(() {
+      _isLoadingVehicles = true;
+      _vehicleError = null;
+    });
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      final remoteDataSource = VehiclesRemoteDataSource(firestore);
+
+      final repository = VehicleRepositoryImpl(remoteDataSource);
+
+      final vehicles = await repository.getUserVehicles('CURRENT_USER_ID');
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _vehicles = vehicles;
+
+        if (_selectedVehicleId == null ||
+            !_vehicles.any((vehicle) => vehicle.id == _selectedVehicleId)) {
+          _selectedVehicleId = _vehicles.isEmpty ? null : _vehicles.first.id;
+        } else {
+          _selectedVehicleId = null;
+        }
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _vehicleError = e.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingVehicles = false;
+        });
+      }
+    }
+  }
+
+  // =========================
+  // DATE
+  // =========================
+
   Future<void> _selectDate() async {
     final date = await showDatePicker(
       context: context,
+
       firstDate: DateTime.now(),
+
       lastDate: DateTime.now().add(const Duration(days: 365)),
+
       initialDate: DateTime.now(),
     );
 
@@ -75,6 +163,10 @@ class _PublishTripPageState extends State<PublishTripPage> {
     }
   }
 
+  // =========================
+  // HEURE
+  // =========================
+
   Future<void> _selectTime() async {
     final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
 
@@ -84,6 +176,10 @@ class _PublishTripPageState extends State<PublishTripPage> {
       });
     }
   }
+
+  // =========================
+  // PUBLICATION
+  // =========================
 
   Future<void> _publish() async {
     if (!_formKey.currentState!.validate()) {
@@ -98,23 +194,45 @@ class _PublishTripPageState extends State<PublishTripPage> {
       return;
     }
 
+    if (_selectedVehicleId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Veuillez sélectionner un véhicule.')));
+
+      return;
+    }
+
     final departureDateTime = DateTime(
       _selectedDate!.year,
+
       _selectedDate!.month,
+
       _selectedDate!.day,
+
       _selectedTime!.hour,
+
       _selectedTime!.minute,
     );
 
     final trip = Trip(
       id: '',
+
       driverId: 'CURRENT_USER_ID',
+
+      vehicleId: _selectedVehicleId!,
+
       departureLocation: const GeoPoint(12.3714, -1.5197),
+
       departureLabel: _departureController.text.trim(),
+
       universityId: _universityController.text.trim(),
+
       departureDateTime: departureDateTime,
+
       availableSeats: int.parse(_seatsController.text),
+
       pricePerSeat: double.parse(_priceController.text),
+
       status: TripStatus.available,
     );
 
@@ -128,14 +246,24 @@ class _PublishTripPageState extends State<PublishTripPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Trajet publié avec succès !')));
-
-      Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_controller.errorMessage!)));
     }
+    _departureController.clear();
+    _universityController.clear();
+    _seatsController.clear();
+    _priceController.clear();
+
+    setState(() {
+      _selectedDate = null;
+      _selectedTime = null;
+    });
   }
+  // =========================
+  // PAGE
+  // =========================
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +285,7 @@ class _PublishTripPageState extends State<PublishTripPage> {
                   children: [
                     const Text(
                       'Publier un trajet',
+
                       style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                     ),
 
@@ -164,6 +293,7 @@ class _PublishTripPageState extends State<PublishTripPage> {
 
                     Text(
                       'Proposez votre trajet à d’autres étudiants.',
+
                       style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
                     ),
 
@@ -181,6 +311,10 @@ class _PublishTripPageState extends State<PublishTripPage> {
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
+
+  // =========================
+  // HEADER
+  // =========================
 
   Widget _buildHeader() {
     return Padding(
@@ -205,6 +339,10 @@ class _PublishTripPageState extends State<PublishTripPage> {
       ),
     );
   }
+
+  // =========================
+  // CARTE PUBLICATION
+  // =========================
 
   Widget _buildPublishCard() {
     return Container(
@@ -233,8 +371,11 @@ class _PublishTripPageState extends State<PublishTripPage> {
           children: [
             _buildLocationField(
               controller: _departureController,
+
               label: 'DÉPART',
+
               hint: 'Votre lieu de départ',
+
               color: Colors.blue,
             ),
 
@@ -242,10 +383,17 @@ class _PublishTripPageState extends State<PublishTripPage> {
 
             _buildLocationField(
               controller: _universityController,
+
               label: 'ARRIVÉE',
+
               hint: 'Université de destination',
+
               color: Colors.orange,
             ),
+
+            const SizedBox(height: 14),
+
+            _buildVehicleField(),
 
             const SizedBox(height: 18),
 
@@ -352,10 +500,154 @@ class _PublishTripPageState extends State<PublishTripPage> {
     );
   }
 
+  // =========================
+  // VEHICULE
+  // =========================
+
+  Widget _buildVehicleField() {
+    if (_isLoadingVehicles) {
+      return Container(
+        height: 62,
+
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F4F7),
+
+          borderRadius: BorderRadius.circular(18),
+        ),
+
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_vehicleError != null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+
+          borderRadius: BorderRadius.circular(18),
+        ),
+
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red),
+
+            const SizedBox(width: 10),
+
+            const Expanded(child: Text('Impossible de charger les véhicules.')),
+
+            IconButton(onPressed: _loadVehicles, icon: const Icon(Icons.refresh)),
+          ],
+        ),
+      );
+    }
+
+    if (_vehicles.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F4F7),
+
+          borderRadius: BorderRadius.circular(18),
+        ),
+
+        child: Row(
+          children: [
+            const Icon(Icons.directions_car_outlined, color: Color(0xFF1769E0)),
+
+            const SizedBox(width: 12),
+
+            const Expanded(child: Text('Aucun véhicule enregistré.')),
+
+            TextButton(
+              onPressed: () async {
+                await context.push('/vehicles/add');
+
+                if (mounted) {
+                  _loadVehicles();
+                }
+              },
+
+              child: const Text('Ajouter'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          initialValue: _selectedVehicleId,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: 'VÉHICULE',
+            prefixIcon: const Icon(Icons.directions_car_outlined, color: Color(0xFF1769E0)),
+            filled: true,
+            fillColor: const Color(0xFFF2F4F7),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          items: _vehicles.map((vehicle) {
+            return DropdownMenuItem<String>(
+              value: vehicle.id,
+              child: Text(
+                '${vehicle.brand} ${vehicle.model} • ${vehicle.plate}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedVehicleId = value;
+            });
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Veuillez sélectionner un véhicule';
+            }
+
+            return null;
+          },
+        ),
+
+        const SizedBox(height: 8),
+
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () async {
+              await context.push('/vehicles/add');
+
+              if (!mounted) return;
+
+              await _loadVehicles();
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Ajouter un autre véhicule'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // =========================
+  // CHAMPS LOCALISATION
+  // =========================
+
   Widget _buildLocationField({
     required TextEditingController controller,
+
     required String label,
+
     required String hint,
+
     required Color color,
   }) {
     return TextFormField(
@@ -363,6 +655,7 @@ class _PublishTripPageState extends State<PublishTripPage> {
 
       decoration: InputDecoration(
         labelText: label,
+
         hintText: hint,
 
         prefixIcon: Icon(Icons.circle, size: 14, color: color),
@@ -388,6 +681,10 @@ class _PublishTripPageState extends State<PublishTripPage> {
     );
   }
 
+  // =========================
+  // DECORATION INPUT
+  // =========================
+
   InputDecoration _inputDecoration(String label, IconData icon, {String? suffix}) {
     return InputDecoration(
       labelText: label,
@@ -407,6 +704,10 @@ class _PublishTripPageState extends State<PublishTripPage> {
       ),
     );
   }
+
+  // =========================
+  // DATE BOX
+  // =========================
 
   Widget _buildDateBox() {
     return InkWell(
@@ -458,6 +759,10 @@ class _PublishTripPageState extends State<PublishTripPage> {
     );
   }
 
+  // =========================
+  // TIME BOX
+  // =========================
+
   Widget _buildTimeBox() {
     return InkWell(
       onTap: _selectTime,
@@ -503,6 +808,10 @@ class _PublishTripPageState extends State<PublishTripPage> {
       ),
     );
   }
+
+  // =========================
+  // NAVIGATION
+  // =========================
 
   Widget _buildBottomNavigation() {
     return BottomNavigationBar(

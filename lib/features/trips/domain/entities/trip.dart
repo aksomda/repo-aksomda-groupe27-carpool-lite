@@ -1,20 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+enum TripStatus { available, cancelled }
+
 class Trip {
   final String id;
   final String driverId;
-  final GeoPoint departureLocation; // lat/lng, vient de la géoloc
-  final String departureLabel; // ex: "Zogona", "Patte d'Oie" — quartier/zone lisible
-  final String universityId; // référence vers features/universities
+  final String vehicleId;
+
+  final GeoPoint departureLocation;
+  final String departureLabel;
+  final String universityId;
+
   final DateTime departureDateTime;
+
   final int availableSeats;
   final double pricePerSeat;
+
   final TripStatus status;
+
   final List<String> passengerIds;
 
   const Trip({
     required this.id,
     required this.driverId,
+    required this.vehicleId,
     required this.departureLocation,
     required this.departureLabel,
     required this.universityId,
@@ -25,5 +34,3 @@ class Trip {
     this.passengerIds = const [],
   });
 }
-
-enum TripStatus { available, full, completed, cancelled }

@@ -574,37 +574,29 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
         '${trip.departureDateTime.hour.toString().padLeft(2, '0')}:'
         '${trip.departureDateTime.minute.toString().padLeft(2, '0')}';
 
+    final vehicleText = trip.vehicleId.isEmpty ? 'Véhicule non renseigné' : trip.vehicleId;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-
       padding: const EdgeInsets.all(16),
-
       decoration: BoxDecoration(
         color: Colors.white,
-
         borderRadius: BorderRadius.circular(22),
-
         border: Border.all(color: const Color(0xFFE7E7E7)),
-
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-
             blurRadius: 10,
-
             offset: const Offset(0, 4),
           ),
         ],
       ),
-
       child: Row(
         children: [
           Container(
             width: 58,
             height: 58,
-
             decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFEAF2FF)),
-
             child: const Icon(Icons.person, size: 34, color: Color(0xFF1769E0)),
           ),
 
@@ -613,15 +605,11 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-
               children: [
                 Text(
                   trip.departureLabel,
-
                   maxLines: 1,
-
                   overflow: TextOverflow.ellipsis,
-
                   style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                 ),
 
@@ -629,7 +617,26 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
 
                 Text('${trip.availableSeats} place(s)', style: const TextStyle(color: Colors.grey)),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
+
+                Row(
+                  children: [
+                    const Icon(Icons.directions_car_outlined, size: 20, color: Color(0xFF1769E0)),
+
+                    const SizedBox(width: 8),
+
+                    Expanded(
+                      child: Text(
+                        vehicleText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
 
                 Row(
                   children: [
@@ -640,12 +647,9 @@ class _SearchTripsPageState extends State<SearchTripsPage> {
                     Expanded(
                       child: Text(
                         '${trip.pricePerSeat.toStringAsFixed(0)} FCFA',
-
                         overflow: TextOverflow.ellipsis,
-
                         style: const TextStyle(
                           color: Color(0xFF1769E0),
-
                           fontWeight: FontWeight.bold,
                         ),
                       ),

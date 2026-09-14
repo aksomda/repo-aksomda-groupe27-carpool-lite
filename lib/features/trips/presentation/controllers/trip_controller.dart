@@ -90,6 +90,7 @@ class TripController extends ChangeNotifier {
           return Trip(
             id: trip.id,
             driverId: trip.driverId,
+            vehicleId: trip.vehicleId,
             departureLocation: trip.departureLocation,
             departureLabel: trip.departureLabel,
             universityId: trip.universityId,

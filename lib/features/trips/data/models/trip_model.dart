@@ -6,6 +6,7 @@ class TripModel extends Trip {
   const TripModel({
     required super.id,
     required super.driverId,
+    required super.vehicleId,
     required super.departureLocation,
     required super.departureLabel,
     required super.universityId,
@@ -16,26 +17,49 @@ class TripModel extends Trip {
     super.passengerIds,
   });
 
-  factory TripModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> document) {
-    final data = document.data();
+  factory TripModel.fromEntity(Trip trip) {
+    return TripModel(
+      id: trip.id,
+      driverId: trip.driverId,
+      vehicleId: trip.vehicleId,
+      departureLocation: trip.departureLocation,
+      departureLabel: trip.departureLabel,
+      universityId: trip.universityId,
+      departureDateTime: trip.departureDateTime,
+      availableSeats: trip.availableSeats,
+      pricePerSeat: trip.pricePerSeat,
+      status: trip.status,
+      passengerIds: trip.passengerIds,
+    );
+  }
 
-    if (data == null) {
-      throw Exception('Les données du trajet sont introuvables.');
-    }
+  factory TripModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data()!;
 
     return TripModel(
-      id: document.id,
-      driverId: data['driverId'] as String,
-      departureLocation: data['departureLocation'] as GeoPoint,
-      departureLabel: data['departureLabel'] as String,
-      universityId: data['universityId'] as String,
+      id: doc.id,
+
+      driverId: data['driverId'] ?? '',
+
+      vehicleId: data['vehicleId'] ?? '',
+
+      departureLocation: data['departureLocation'],
+
+      departureLabel: data['departureLabel'] ?? '',
+
+      universityId: data['universityId'] ?? '',
+
       departureDateTime: (data['departureDateTime'] as Timestamp).toDate(),
-      availableSeats: data['availableSeats'] as int,
+
+      availableSeats: data['availableSeats'] ?? 0,
+
       pricePerSeat: (data['pricePerSeat'] as num).toDouble(),
+
       status: TripStatus.values.firstWhere(
         (status) => status.name == data['status'],
         orElse: () => TripStatus.available,
       ),
+
       passengerIds: List<String>.from(data['passengerIds'] ?? []),
     );
   }
@@ -43,13 +67,23 @@ class TripModel extends Trip {
   Map<String, dynamic> toFirestore() {
     return {
       'driverId': driverId,
+
+      'vehicleId': vehicleId,
+
       'departureLocation': departureLocation,
+
       'departureLabel': departureLabel,
+
       'universityId': universityId,
+
       'departureDateTime': Timestamp.fromDate(departureDateTime),
+
       'availableSeats': availableSeats,
+
       'pricePerSeat': pricePerSeat,
+
       'status': status.name,
+
       'passengerIds': passengerIds,
     };
   }

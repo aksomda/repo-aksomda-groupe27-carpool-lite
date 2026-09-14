@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/trips/presentation/pages/publish_trip_page.dart';
 import '../../features/trips/presentation/pages/search_trips_page.dart';
 import '../../features/trips/presentation/pages/trip_history_page.dart';
+import '../../features/vehicles/presentation/pages/add_vehicle_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/trips/publish',
@@ -52,6 +53,7 @@ final GoRouter appRouter = GoRouter(
         ),
       ],
     ),
+    GoRoute(path: '/vehicles/add', builder: (context, state) => const AddVehiclePage()),
 
     // 5. Réservations
     GoRoute(
