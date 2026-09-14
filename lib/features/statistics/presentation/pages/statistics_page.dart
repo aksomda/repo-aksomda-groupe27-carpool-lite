@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_theme.dart';
+import '../widgets/quick_stats_row.dart';
 import '../widgets/satisfaction_chart.dart';
 import '../widgets/statistic_card.dart';
 
@@ -38,6 +40,37 @@ class StatisticsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
 
           children: [
+            QuickStatsRow(
+              items: [
+                QuickStatItem(
+                  icon: Icons.directions_car,
+                  value: '$totalTrips',
+                  label: 'Trajets réalisés',
+                  color: AppColors.primary,
+                ),
+                QuickStatItem(
+                  icon: Icons.person,
+                  value: '$totalDrivers',
+                  label: 'Conducteurs',
+                  color: Colors.green,
+                ),
+                QuickStatItem(
+                  icon: Icons.rate_review,
+                  value: '$totalReviews',
+                  label: 'Évaluations',
+                  color: Colors.amber.shade700,
+                ),
+                QuickStatItem(
+                  icon: Icons.sentiment_satisfied,
+                  value: '${satisfactionPercentage.toStringAsFixed(0)}%',
+                  label: 'Satisfaction',
+                  color: AppColors.primary,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
             const Text(
               'Satisfaction des utilisateurs',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),

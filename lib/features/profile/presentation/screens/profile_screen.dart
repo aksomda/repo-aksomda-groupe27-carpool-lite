@@ -1,9 +1,11 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../navigation/presentation/widgets/bottom_navigation.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/profile_avatar.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileColors {
@@ -103,6 +105,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   onTap: () {
                     Navigator.pop(context);
+                    // TODO: brancher la capture caméra (image_picker) puis
+                    // appeler widget.profileProvider.updatePhoto(...).
                   },
                 ),
 
@@ -116,6 +120,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   onTap: () {
                     Navigator.pop(context);
+                    // TODO: brancher la sélection galerie (image_picker) puis
+                    // appeler widget.profileProvider.updatePhoto(...).
                   },
                 ),
 
@@ -129,6 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   onTap: () {
                     Navigator.pop(context);
+                    // TODO: brancher la suppression de la photo de profil.
                   },
                 ),
               ],
@@ -186,9 +193,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-
-
     return AnimatedBuilder(
         animation: widget.profileProvider,
         builder: (context, _) {
@@ -215,7 +219,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           padding: const EdgeInsets.all(24),
                           children: [
                             Center(
-                              child: ProfileAvatar(name: profile.name, radius: 48),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  ProfileAvatar(name: profile.name, radius: 48),
+                                  Positioned(
+                                    right: -4,
+                                    bottom: -4,
+                                    child: GestureDetector(
+                                      onTap: _showPhotoOptions,
+                                      child: Container(
+                                        width: 32,
+                                        height: 32,
+                                        decoration: BoxDecoration(
+                                          color: ProfileColors.primary,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 3,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.camera_alt_outlined,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Center(
@@ -267,47 +300,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   MaterialPageRoute(
                                     builder: (_) => EditProfileScreen(
                                       profileProvider: widget.profileProvider,
-                                      profile: profile!,
+                                      profile: profile,
                                     ),
                                   ),
                                 );
-
-                          },
-                          onTripsPressed: () {
-                            _openPage(
-                              'Mes trajets',
-                            );
-                          },
-                          onReviewsPressed: () {
-                            _openPage(
-                              'Mes avis',
-                            );
-                          },
-                          onPreferencesPressed: () {
-                            _openPreferences();
-                          },
+                              },
+                              icon: const Icon(Icons.edit),
+                              label: const Text('Modifier mon profil'),
+                            ),
+                            const SizedBox(height: 24),
+                            _ProfileMenuCard(
+                              onInformationPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => EditProfileScreen(
+                                      profileProvider: widget.profileProvider,
+                                      profile: profile,
+                                    ),
+                                  ),
+                                );
+                              },
+                              onTripsPressed: () {
+                                _openPage(
+                                  'Mes trajets',
+                                );
+                              },
+                              onReviewsPressed: () {
+                                _openPage(
+                                  'Mes avis',
+                                );
+                              },
+                              onPreferencesPressed: () {
+                                _openPreferences();
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                            _LogoutButton(
+                              onPressed: _showLogoutDialog,
+                            ),
+                          ],
                         ),
-
-                        const SizedBox(height: 24),
-
-                        _LogoutButton(
-                          onPressed:
-                          _showLogoutDialog,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            bottomNavigationBar:
-            HomeBottomNavigation(
-              currentIndex: 4,
-            ),
-          );
-        });
-
+          bottomNavigationBar: HomeBottomNavigation(currentIndex: 4),
+        );
+      },
+    );
   }
 
   void _openPage(String title) {
@@ -326,340 +362,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-
-// ============================================================
-// PROFILE IDENTITY
-// ============================================================
-
-class _ProfileIdentity
-    extends StatelessWidget {
-  final String userName;
-  final String university;
-  final String avatarPath;
-  final VoidCallback onPhotoPressed;
-
-  const _ProfileIdentity({
-    required this.userName,
-    required this.university,
-    required this.avatarPath,
-    required this.onPhotoPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact =
-            constraints.maxWidth < 600;
-
-        return Row(
-          crossAxisAlignment:
-          CrossAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  width: compact ? 90 : 120,
-                  height: compact ? 90 : 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 4,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue
-                            .withValues(alpha: 0.08),
-                        blurRadius: 20,
-                        offset:
-                        const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  clipBehavior:
-                  Clip.antiAlias,
-                  child: Image.asset(
-                    avatarPath,
-                    fit: BoxFit.cover,
-                    errorBuilder:
-                        (context, error, stackTrace) {
-                      return Container(
-                        color:
-                        ProfileColors.lightBlue,
-                        child: const Icon(
-                          Icons.person,
-                          size: 90,
-                          color:
-                          ProfileColors.primary,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                Positioned(
-                  right: -5,
-                  bottom: 2,
-                  child: GestureDetector(
-                    onTap:
-                    onPhotoPressed,
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration:
-                      BoxDecoration(
-                        color:
-                        ProfileColors.primary,
-                        shape:
-                        BoxShape.circle,
-                        border:
-                        Border.all(
-                          color:
-                          Colors.white,
-                          width: 4,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue
-                                .withValues(alpha:
-                            0.18),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt_outlined,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(width: 35),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Bonjour $userName ',
-                    style: TextStyle(
-                      fontSize:
-                      compact ? 20 : 25,
-                      fontWeight:
-                      FontWeight.w800,
-                      color:
-                      ProfileColors.darkBlue,
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Container(
-                    padding:
-                    const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 5,
-                    ),
-                    decoration:
-                    BoxDecoration(
-                      color:
-                      const Color(
-                          0xFFE4F1FF),
-                      borderRadius:
-                      BorderRadius.circular(
-                          30),
-                    ),
-                    child: Row(
-                      mainAxisSize:
-                      MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.school,
-                          color:
-                          ProfileColors.primary,
-                          size: 20,
-                        ),
-
-                        const SizedBox(
-                            width: 10),
-
-                        Flexible(
-                          child: Text(
-                            university,
-                            overflow:
-                            TextOverflow
-                                .ellipsis,
-                            style:
-                            const TextStyle(
-                              color:
-                              ProfileColors.primary,
-                              fontWeight:
-                              FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-// ============================================================
-// STATISTICS
-// ============================================================
-
-class _StatisticsCard extends StatelessWidget {
-  const _StatisticsCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        vertical: 27,
-        horizontal: 10,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-        BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color:
-            Colors.blue.withValues(alpha: 0.07),
-            blurRadius: 22,
-            offset:
-            const Offset(0, 7),
-          ),
-        ],
-      ),
-      child: const Row(
-        children: [
-          _StatItem(
-            icon: Icons.directions_car,
-            value: '3',
-            label: 'Trajets proposés',
-            color:
-            ProfileColors.primary,
-          ),
-
-          _StatDivider(),
-
-          _StatItem(
-            icon: Icons.people_alt,
-            value: '5',
-            label: 'Trajets effectués',
-            color:
-            ProfileColors.green,
-          ),
-
-          _StatDivider(),
-
-          _StatItem(
-            icon: Icons.star,
-            value: '4.8',
-            label: 'Note moyenne',
-            color:
-            ProfileColors.yellow,
-          ),
-
-          _StatDivider(),
-
-          _StatItem(
-            icon: Icons.verified_user,
-            value: '100%',
-            label: 'Profil vérifié',
-            color:
-            ProfileColors.primary,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-
-  const _StatItem({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: color,
-            size: 35,
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 29,
-              fontWeight:
-              FontWeight.w800,
-              color:
-              ProfileColors.darkBlue,
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            label,
-            textAlign:
-            TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              color:
-              ProfileColors.mediumBlue,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatDivider extends StatelessWidget {
-  const _StatDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 90,
-      color: ProfileColors.border,
-    );
-  }
-}
 
 // ============================================================
 // PROFILE MENU
@@ -945,7 +647,6 @@ class _LogoutButton
     );
   }
 }
-
 
 // ============================================================
 // BOTTOM SHEET ICON

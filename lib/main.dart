@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,9 +15,7 @@ import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint("Message reçu en arrière-plan : ${message.messageId}");
 }
 
@@ -26,30 +25,31 @@ void main() async {
   // =======================================================
   // FIREBASE
   // =======================================================
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // =======================================================
-  // NOTIFICATIONS BACKGROUND
+  // NOTIFICATIONS (FCM)
   // =======================================================
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // Tout ce bloc est mis en sandbox : sur le web notamment, l'enregistrement
+  // du service worker ou l'absence de clé VAPID peuvent faire échouer FCM.
+  // Une erreur ici ne doit jamais empêcher runApp() de s'exécuter, sous
+  // peine d'obtenir une page blanche silencieuse (ce qui arrivait avant).
+  try {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // =======================================================
-  // INITIALISATION NOTIFICATIONS
-  // =======================================================
-  await NotificationService.instance.initialize();
-  // =======================================================
-  // TOKEN FCM
-  // =======================================================
-  final fcmToken = await FirebaseMessaging.instance.getToken();
-  debugPrint("FCM Token: $fcmToken");
+    await NotificationService.instance.initialize();
 
-  // =======================================================
-  // LISTENER EN PREMIER PLAN
-  // =======================================================
-  FirebaseMessaging.onMessage.listen(
-        (RemoteMessage message) async {
+    // Sur le web, getToken() nécessite une clé VAPID (Console Firebase >
+    // Cloud Messaging > Configuration web > Génération de paire de clés).
+    // Remplacez la valeur ci-dessous par votre propre clé publique.
+    final fcmToken = await FirebaseMessaging.instance.getToken(
+      vapidKey: kIsWeb
+          ? 'BLWOny4p88o2cloWcLqYyUxiYtEDvKQ-frIfnWEvJeCWBHvu3i6lyBFlNgBrcwyl0k39JaYqTH3mhBq182Dpmm0'
+          : null,
+    );
+    debugPrint("FCM Token: $fcmToken");
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       debugPrint('🔔 Message reçu au premier plan !');
       debugPrint('Titre: ${message.notification?.title}');
       debugPrint('Corps: ${message.notification?.body}');
@@ -58,21 +58,19 @@ void main() async {
       final notification = message.notification;
 
       if (notification != null) {
-        await NotificationService.instance
-            .showLocalNotification(
+        await NotificationService.instance.showLocalNotification(
           title: notification.title ?? 'CarPool Lite',
           body: notification.body ?? '',
           payload: message.data,
         );
       }
-    },
-  );
+    });
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ Initialisation FCM ignorée (non bloquante) : $e');
+    debugPrint('$stackTrace');
+  }
 
-  runApp(
-    const ProviderScope(
-      child: CarpoolLiteApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: CarpoolLiteApp()));
 }
 
 class CarpoolLiteApp extends StatelessWidget {
