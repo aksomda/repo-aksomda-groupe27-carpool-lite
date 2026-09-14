@@ -260,6 +260,15 @@ class AppDrawer extends StatelessWidget {
                     route: '/statistics',
                   ),
 
+                  _sectionLabel('COMPTE'),
+
+                  _menuItem(
+                    context,
+                    icon: Icons.person_outline_rounded,
+                    label: 'Profil',
+                    route: '/profile',
+                  ),
+
                   const SizedBox(height: 8),
                 ],
               ),

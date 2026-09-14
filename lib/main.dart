@@ -15,7 +15,9 @@ import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   debugPrint("Message reçu en arrière-plan : ${message.messageId}");
 }
 
@@ -25,7 +27,9 @@ void main() async {
   // =======================================================
   // FIREBASE
   // =======================================================
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // =======================================================
   // NOTIFICATIONS (FCM)
@@ -43,9 +47,7 @@ void main() async {
     // Cloud Messaging > Configuration web > Génération de paire de clés).
     // Remplacez la valeur ci-dessous par votre propre clé publique.
     final fcmToken = await FirebaseMessaging.instance.getToken(
-      vapidKey: kIsWeb
-          ? 'BLWOny4p88o2cloWcLqYyUxiYtEDvKQ-frIfnWEvJeCWBHvu3i6lyBFlNgBrcwyl0k39JaYqTH3mhBq182Dpmm0'
-          : null,
+      vapidKey: kIsWeb ? 'REMPLACER_PAR_VOTRE_CLE_VAPID' : null,
     );
     debugPrint("FCM Token: $fcmToken");
 
@@ -70,7 +72,11 @@ void main() async {
     debugPrint('$stackTrace');
   }
 
-  runApp(const ProviderScope(child: CarpoolLiteApp()));
+  runApp(
+    const ProviderScope(
+      child: CarpoolLiteApp(),
+    ),
+  );
 }
 
 class CarpoolLiteApp extends StatelessWidget {

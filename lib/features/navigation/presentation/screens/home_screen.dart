@@ -8,7 +8,7 @@ import 'package:repo_aksomda_groupe27_carpool_lite/features/auth/presentation/pr
 import '../../../../core/theme/app_theme.dart';
 import '../widgets/home_header.dart';
 import '../widgets/search_trip_card.dart';
-import '../widgets/bottom_navigation.dart';
+// import '../widgets/bottom_navigation.dart'; // masqué temporairement
 import '../widgets/quick_access_grid.dart';
 import '../widgets/app_drawer.dart';
 
@@ -221,7 +221,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      bottomNavigationBar: HomeBottomNavigation(currentIndex: 0),
+      // bottomNavigationBar masquée temporairement (menu du bas désactivé).
+      // bottomNavigationBar: HomeBottomNavigation(currentIndex: 0),
     );
   }
 }

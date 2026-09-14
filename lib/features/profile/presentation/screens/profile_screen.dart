@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../navigation/presentation/widgets/bottom_navigation.dart';
+// import '../../../navigation/presentation/widgets/bottom_navigation.dart'; // masqué temporairement
 import '../providers/profile_provider.dart';
 import '../widgets/profile_avatar.dart';
 import 'edit_profile_screen.dart';
@@ -340,7 +340,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
-          bottomNavigationBar: HomeBottomNavigation(currentIndex: 4),
+          // bottomNavigationBar masquée temporairement (menu du bas désactivé).
+          // bottomNavigationBar: const HomeBottomNavigation(currentIndex: -1),
         );
       },
     );
