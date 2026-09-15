@@ -35,12 +35,35 @@ import '../../features/profile/domain/usecases/get_profile_usecase.dart';
 import '../../features/profile/domain/usecases/update_profile_usecase.dart';
 import '../../features/profile/presentation/providers/profile_provider.dart';
 
-/// Point unique de câblage manuel des dépendances (pas d'injection de code
-/// généré : on construit ici, une seule fois, les datasources → repository
-/// → usecases → providers, à partir des instances Firebase déjà
-/// initialisées dans main.dart).
+import '../../features/bookings/data/datasources/booking_remote_datasource.dart';
+import '../../features/bookings/data/repositories/booking_repository_impl.dart';
+import '../../features/bookings/domain/repositories/booking_repository.dart';
+import '../../features/bookings/domain/usecases/request_booking_usecase.dart';
+import '../../features/bookings/domain/usecases/confirm_booking_usecase.dart';
+import '../../features/bookings/domain/usecases/reject_booking_request_usecase.dart';
+import '../../features/bookings/domain/usecases/cancel_booking_usecase.dart';
+import '../../features/bookings/presentation/providers/booking_provider.dart';
+
+/// Point unique de câblage manuel des dépendances.
+///
+/// Les dépendances sont construites selon le schéma :
+///
+/// DataSource
+///     ↓
+/// Repository
+///     ↓
+/// UseCases
+///     ↓
+/// Provider
+///
+/// Les instances Firebase utilisées ici sont celles déjà initialisées
+/// dans main.dart.
 class Injector {
   Injector._();
+
+  // ============================================================
+  // AUTHENTIFICATION
+  // ============================================================
 
   static final AuthRepository authRepository = AuthRepositoryImpl(
     remoteDataSource: AuthRemoteDataSource(
@@ -49,59 +72,120 @@ class Injector {
     ),
   );
 
-  /// Instance unique partagée par tout l'arbre de routes : la session de
-  /// l'utilisateur (connecté ou non) doit rester la même d'un écran à
-  /// l'autre.
+  /// Instance unique partagée de l'AuthProvider.
   static final AuthProvider authProvider = AuthProvider(
     signInUserCase: SignInUserCase(authRepository),
     signUpUserCase: SignUpUserCase(authRepository),
     verifyStudentUseCase: VerifyStudentUseCase(authRepository),
-    sendEmailVerificationUseCase: SendEmailVerificationUseCase(authRepository),
+    sendEmailVerificationUseCase: SendEmailVerificationUseCase(
+      authRepository,
+    ),
     checkEmailVerificationUseCase: CheckEmailVerificationUseCase(
       authRepository,
     ),
     authRepository: authRepository,
   );
 
+  // ============================================================
+  // UNIVERSITÉS
+  // ============================================================
+
   static UniversityProvider createUniversityProvider() {
     final repository = UniversityRepositoryImpl(
-      UniversityRemoteDataSource(firestore: FirebaseFirestore.instance),
+      UniversityRemoteDataSource(
+        firestore: FirebaseFirestore.instance,
+      ),
     );
+
     return UniversityProvider(
       getUniversitiesUseCase: GetUniversitiesUseCase(repository),
       addUniversityUseCase: AddUniversityUseCase(repository),
     );
   }
 
+  // ============================================================
+  // REVIEWS
+  // ============================================================
+
   static ReviewProvider createReviewProvider() {
     final repository = ReviewRepositoryImpl(
-      remoteDataSource: ReviewRemoteDataSource(FirebaseFirestore.instance),
+      remoteDataSource: ReviewRemoteDataSource(
+        FirebaseFirestore.instance,
+      ),
     );
+
     return ReviewProvider(
       createReviewUseCase: CreateReview(repository),
       getReviewsForUserUseCase: GetReviewsForUserUseCase(repository),
     );
   }
 
+  // ============================================================
+  // STATISTIQUES
+  // ============================================================
+
   static StatisticsProvider createStatisticsProvider() {
     final remoteDataSource = StatisticsRemoteDataSource(
       firestore: FirebaseFirestore.instance,
     );
+
     final repository = StatisticsRepositoryImpl(
       remoteDataSource: remoteDataSource,
       getDriverStatisticsUseCase: GetDriverStatistics(),
-      getUniversityStatisticsUseCase: GetUniversityStatistics(),
+      getUniversityStatisticsUseCase:
+          GetUniversityStatistics(),
     );
-    return StatisticsProvider(repository: repository);
+
+    return StatisticsProvider(
+      repository: repository,
+    );
   }
+
+  // ============================================================
+  // PROFIL
+  // ============================================================
 
   static ProfileProvider createProfileProvider() {
     final repository = ProfileRepositoryImpl(
-      ProfileRemoteDataSource(firestore: FirebaseFirestore.instance),
+      ProfileRemoteDataSource(
+        firestore: FirebaseFirestore.instance,
+      ),
     );
+
     return ProfileProvider(
       getProfileUseCase: GetProfileUseCase(repository),
       updateProfileUseCase: UpdateProfileUseCase(repository),
+    );
+  }
+
+  // ============================================================
+  // BOOKINGS / RÉSERVATIONS
+  // ============================================================
+
+  static BookingProvider createBookingProvider() {
+    final remoteDataSource = BookingRemoteDataSource(
+      firestore: FirebaseFirestore.instance,
+    );
+
+    final BookingRepository repository = BookingRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+    );
+
+    return BookingProvider(
+      requestBookingUseCase: RequestBookingUseCase(
+        repository,
+      ),
+      confirmBookingUseCase: ConfirmBookingUseCase(
+        repository,
+      ),
+      rejectBookingRequestUseCase:
+          RejectBookingRequestUseCase(
+        repository,
+      ),
+      cancelBookingUseCase: CancelBookingUseCase(
+        repository,
+      ),
+      repository: repository,
     );
   }
 }

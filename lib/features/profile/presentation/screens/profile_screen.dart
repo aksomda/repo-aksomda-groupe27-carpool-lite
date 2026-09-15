@@ -1,31 +1,18 @@
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-// import '../../../navigation/presentation/widgets/bottom_navigation.dart'; // masqué temporairement
+import '../../../navigation/presentation/widgets/bottom_navigation.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_avatar.dart';
 import 'edit_profile_screen.dart';
 
-class ProfileColors {
-  static const primary = Color(0xFF1478F2);
-  static const darkBlue = Color(0xFF103875);
-  static const mediumBlue = Color(0xFF5272A8);
-  static const lightBlue = Color(0xFFEAF4FF);
-
-  static const green = Color(0xFF0BB59F);
-  static const yellow = Color(0xFFFFAA00);
-  static const purple = Color(0xFF6551D8);
-
-  static const background = Color(0xFFF7FBFF);
-  static const border = Color(0xFFE1ECFA);
-
-  static const red = Color(0xFFE94E4E);
-}
-
 class ProfileScreen extends StatefulWidget {
-
   final AuthProvider authProvider;
   final ProfileProvider profileProvider;
 
@@ -35,432 +22,539 @@ class ProfileScreen extends StatefulWidget {
     required this.profileProvider,
   });
 
-
-
   @override
-  State<ProfileScreen> createState() =>
-      _ProfileScreenState();
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static const _placeholderTripsProposed = 3;
+  static const _placeholderTripsCompleted = 5;
+  static const _placeholderRating = 4.8;
 
   @override
   void initState() {
     super.initState();
+
     final uid = widget.authProvider.user?.uid;
+
     if (uid != null) {
       widget.profileProvider.loadProfile(uid);
     }
   }
 
+  Future<void> _pickAndUploadPhoto() async {
+    final uid = widget.authProvider.user?.uid;
 
-  int selectedIndex = 4;
+    if (uid == null) {
+      _comingSoon('Utilisateur non connecté.');
+      return;
+    }
 
-  void _showPhotoOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(28),
-        ),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 45,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius:
-                    BorderRadius.circular(10),
-                  ),
-                ),
+    try {
+      final XFile? picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        imageQuality: 85,
+      );
 
-                const SizedBox(height: 25),
+      if (picked == null) {
+        return;
+      }
 
-                const Text(
-                  'Photo de profil',
-                  style: TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.bold,
-                    color: ProfileColors.darkBlue,
-                  ),
-                ),
+      final Uint8List bytes = await picked.readAsBytes();
 
-                const SizedBox(height: 20),
+      if (!mounted) {
+        return;
+      }
 
-                ListTile(
-                  leading: _BottomSheetIcon(
-                    icon: Icons.camera_alt_outlined,
-                    color: ProfileColors.primary,
-                  ),
-                  title: const Text(
-                    'Prendre une photo',
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: brancher la capture caméra (image_picker) puis
-                    // appeler widget.profileProvider.updatePhoto(...).
-                  },
-                ),
+      final success = await widget.profileProvider.updatePhoto(
+        uid,
+        bytes,
+      );
 
-                ListTile(
-                  leading: _BottomSheetIcon(
-                    icon: Icons.photo_library_outlined,
-                    color: ProfileColors.primary,
-                  ),
-                  title: const Text(
-                    'Choisir dans la galerie',
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: brancher la sélection galerie (image_picker) puis
-                    // appeler widget.profileProvider.updatePhoto(...).
-                  },
-                ),
+      if (!mounted) {
+        return;
+      }
 
-                ListTile(
-                  leading: _BottomSheetIcon(
-                    icon: Icons.delete_outline,
-                    color: ProfileColors.red,
-                  ),
-                  title: const Text(
-                    'Supprimer la photo',
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: brancher la suppression de la photo de profil.
-                  },
-                ),
-              ],
-            ),
-          ),
+      if (success) {
+        _comingSoon('Photo de profil mise à jour.');
+      } else {
+        _comingSoon(
+          widget.profileProvider.errorMessage ??
+              "Échec de l'envoi de la photo.",
         );
-      },
+      }
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      _comingSoon(
+        'Impossible de sélectionner la photo.',
+      );
+    }
+  }
+
+  void _comingSoon(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
-  void _showLogoutDialog() {
-    showDialog(
+  Future<void> _confirmSignOut() async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          title: const Text(
-            'Se déconnecter ?',
-            style: TextStyle(
-              color: ProfileColors.darkBlue,
-              fontWeight: FontWeight.bold,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Se déconnecter'),
+        content: const Text(
+          'Voulez-vous vraiment vous déconnecter de CarPool Lite ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              false,
             ),
+            child: const Text('Annuler'),
           ),
-          content: const Text(
-            'Voulez-vous vraiment vous déconnecter de votre compte ?',
-            style: TextStyle(
-              color: ProfileColors.mediumBlue,
+          TextButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              true,
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                widget.authProvider.signOut();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ProfileColors.red,
-                foregroundColor: Colors.white,
+            child: const Text(
+              'Se déconnecter',
+              style: TextStyle(
+                color: AppColors.error,
               ),
-              child: const Text('Déconnexion'),
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
+
+    if (confirmed == true) {
+      await widget.authProvider.signOut();
+
+      if (!mounted) {
+        return;
+      }
+
+      context.go('/auth');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-        animation: widget.profileProvider,
-        builder: (context, _) {
-          final profile = widget.profileProvider.profile;
+      animation: widget.profileProvider,
+      builder: (context, _) {
+        final profile = widget.profileProvider.profile;
+        final isLoading = widget.profileProvider.isLoading;
+        final errorMessage = widget.profileProvider.errorMessage;
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Mon profil'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout),
-                tooltip: 'Déconnexion',
-                onPressed: () => widget.authProvider.signOut(),
-              ),
-            ],
-          ),
-          body: widget.profileProvider.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : widget.profileProvider.errorMessage != null
-                  ? Center(child: Text(widget.profileProvider.errorMessage!))
-                  : profile == null
-                      ? const Center(child: Text('Aucun profil.'))
-                      : ListView(
+          backgroundColor: AppColors.background,
+
+          body: SafeArea(
+            child: isLoading && profile == null
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : errorMessage != null && profile == null
+                    ? Center(
+                        child: Padding(
                           padding: const EdgeInsets.all(24),
-                          children: [
-                            Center(
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  ProfileAvatar(name: profile.name, radius: 48),
-                                  Positioned(
-                                    right: -4,
-                                    bottom: -4,
-                                    child: GestureDetector(
-                                      onTap: _showPhotoOptions,
-                                      child: Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          color: ProfileColors.primary,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 3,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.camera_alt_outlined,
-                                          color: Colors.white,
-                                          size: 16,
+                          child: Text(
+                            errorMessage,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.fromLTRB(
+                          20,
+                          12,
+                          20,
+                          110,
+                        ),
+                        children: [
+                          _ProfileHeader(
+                            onSettingsTap: () {
+                              _comingSoon(
+                                'Préférences bientôt disponibles.',
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          Center(
+                            child: _AvatarWithEditButton(
+                              name: profile?.name ?? '',
+                              photoUrl: profile?.photoUrl,
+                              isUploading: widget
+                                  .profileProvider
+                                  .isUploadingPhoto,
+                              onEditTap: _pickAndUploadPhoto,
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          Center(
+                            child: Text(
+                              'Bonjour ${profile?.name ?? ''}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          Center(
+                            child: Text(
+                              profile?.sex == Sex.femme
+                                  ? 'Étudiante'
+                                  : 'Étudiant',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          _StatsRow(
+                            tripsProposed:
+                                _placeholderTripsProposed,
+                            tripsCompleted:
+                                _placeholderTripsCompleted,
+                            rating: _placeholderRating,
+                            isVerified:
+                                profile?.isVerified ?? false,
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // MES INFORMATIONS
+                          _MenuTile(
+                            icon: Icons.person_outline_rounded,
+                            iconBg: const Color(0xFFEDE7FF),
+                            iconColor: AppColors.accentPurple,
+                            title: 'Mes informations',
+                            subtitle:
+                                'Nom, e-mail, téléphone, établissement',
+                            onTap: profile == null
+                                ? null
+                                : () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            EditProfileScreen(
+                                          profileProvider:
+                                              widget.profileProvider,
+                                          profile: profile,
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Center(
-                              child: Text(
-                                profile.name,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Center(
-                              child: Text(
-                                profile.email,
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            ListTile(
-                              leading: const Icon(Icons.phone),
-                              title: const Text('Téléphone'),
-                              subtitle: Text(profile.phone),
-                            ),
-                            ListTile(
-                              leading: const Icon(Icons.wc),
-                              title: const Text('Sexe'),
-                              subtitle: Text(
-                                profile.sex == Sex.homme ? 'Homme' : 'Femme',
-                              ),
-                            ),
-                            ListTile(
-                              leading: Icon(
-                                profile.isVerified
-                                    ? Icons.verified
-                                    : Icons.hourglass_empty,
-                                color:
-                                    profile.isVerified ? Colors.green : Colors.orange,
-                              ),
-                              title: const Text('Statut étudiant'),
-                              subtitle: Text(
-                                profile.isVerified ? 'Vérifié' : 'Non vérifié',
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            FilledButton.icon(
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => EditProfileScreen(
-                                      profileProvider: widget.profileProvider,
-                                      profile: profile,
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.edit),
-                              label: const Text('Modifier mon profil'),
-                            ),
-                            const SizedBox(height: 24),
-                            _ProfileMenuCard(
-                              onInformationPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => EditProfileScreen(
-                                      profileProvider: widget.profileProvider,
-                                      profile: profile,
-                                    ),
-                                  ),
-                                );
-                              },
-                              onTripsPressed: () {
-                                _openPage(
-                                  'Mes trajets',
-                                );
-                              },
-                              onReviewsPressed: () {
-                                _openPage(
-                                  'Mes avis',
-                                );
-                              },
-                              onPreferencesPressed: () {
-                                _openPreferences();
-                              },
-                            ),
-                            const SizedBox(height: 24),
-                            _LogoutButton(
-                              onPressed: _showLogoutDialog,
-                            ),
-                          ],
-                        ),
-          // bottomNavigationBar masquée temporairement (menu du bas désactivé).
-          // bottomNavigationBar: const HomeBottomNavigation(currentIndex: -1),
+                                    );
+                                  },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // MES TRAJETS
+                          _MenuTile(
+                            icon:
+                                Icons.directions_car_outlined,
+                            iconBg:
+                                const Color(0xFFE1F5EA),
+                            iconColor: AppColors.success,
+                            title: 'Mes trajets',
+                            subtitle:
+                                'Voir mes trajets proposés et réservés',
+                            onTap: () {
+                              context.push('/trips/history');
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // MES AVIS
+                          _MenuTile(
+                            icon: Icons.star_outline_rounded,
+                            iconBg: AppColors.accentYellow
+                                .withValues(alpha: 0.18),
+                            iconColor:
+                                AppColors.accentYellow,
+                            title: 'Mes avis',
+                            subtitle:
+                                'Ce que les autres disent de moi',
+                            onTap: () {
+                              context.push('/reviews');
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // MES PRÉFÉRENCES
+                          _MenuTile(
+                            icon: Icons.settings_outlined,
+                            iconBg: AppColors.inputFill,
+                            iconColor: AppColors.primary,
+                            title: 'Mes préférences',
+                            subtitle:
+                                'Notifications, langue, confidentialité',
+                            onTap: () {
+                              _comingSoon(
+                                'Préférences bientôt disponibles.',
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // DÉCONNEXION
+                          _SignOutButton(
+                            onTap: _confirmSignOut,
+                          ),
+                        ],
+                      ),
+          ),
+
+          // NAVIGATION DU BAS
+          bottomNavigationBar:
+              const HomeBottomNavigation(
+            currentIndex: 4,
+          ),
         );
       },
     );
   }
+}
 
-  void _openPage(String title) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      SnackBar(
-        content: Text(title),
-        behavior:
-        SnackBarBehavior.floating,
-      ),
+// ============================================================
+// HEADER
+// ============================================================
+
+class _ProfileHeader extends StatelessWidget {
+  final VoidCallback onSettingsTap;
+
+  const _ProfileHeader({
+    required this.onSettingsTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.asset(
+            'assets/images/logo_carpoollite.png',
+            width: 38,
+            height: 38,
+            fit: BoxFit.cover,
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        const Expanded(
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              Text(
+                'CarPool Lite',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.navy,
+                ),
+              ),
+              Text(
+                'Covoiturage pour étudiants',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        IconButton(
+          onPressed: onSettingsTap,
+          icon: const Icon(
+            Icons.settings_outlined,
+            color: AppColors.navy,
+          ),
+        ),
+      ],
     );
-  }
-
-  void _openPreferences() {
-    _openPage('Mes préférences');
   }
 }
 
+// ============================================================
+// AVATAR
+// ============================================================
+
+class _AvatarWithEditButton extends StatelessWidget {
+  final String name;
+  final String? photoUrl;
+  final bool isUploading;
+  final VoidCallback onEditTap;
+
+  const _AvatarWithEditButton({
+    required this.name,
+    this.photoUrl,
+    this.isUploading = false,
+    required this.onEditTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ProfileAvatar(
+          name: name,
+          radius: 48,
+          photoUrl: photoUrl,
+        ),
+
+        if (isUploading)
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: Colors.black38,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: GestureDetector(
+            onTap: isUploading
+                ? null
+                : onEditTap,
+            child: Container(
+              padding:
+                  const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white,
+                  width: 2,
+                ),
+              ),
+              child: const Icon(
+                Icons.camera_alt_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 // ============================================================
-// PROFILE MENU
+// STATISTIQUES
 // ============================================================
 
-class _ProfileMenuCard
-    extends StatelessWidget {
-  final VoidCallback onInformationPressed;
-  final VoidCallback onTripsPressed;
-  final VoidCallback onReviewsPressed;
-  final VoidCallback onPreferencesPressed;
+class _StatsRow extends StatelessWidget {
+  final int tripsProposed;
+  final int tripsCompleted;
+  final double rating;
+  final bool isVerified;
 
-  const _ProfileMenuCard({
-    required this.onInformationPressed,
-    required this.onTripsPressed,
-    required this.onReviewsPressed,
-    required this.onPreferencesPressed,
+  const _StatsRow({
+    required this.tripsProposed,
+    required this.tripsCompleted,
+    required this.rating,
+    required this.isVerified,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding:
-      const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 8,
+      padding: const EdgeInsets.symmetric(
+        vertical: 18,
+        horizontal: 8,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius:
-        BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color:
-            Colors.blue.withValues(alpha: 0.07),
-            blurRadius: 22,
-            offset:
-            const Offset(0, 7),
-          ),
-        ],
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.border,
+        ),
       ),
-      child: Column(
+      child: Row(
         children: [
-          _ProfileMenuItem(
-            icon: Icons.person,
-            iconColor:
-            ProfileColors.primary,
-            backgroundColor:
-            const Color(0xFFE5F1FF),
-            title: 'Mes informations',
-            subtitle:
-            'Nom, e-mail, téléphone, établissement...',
-            onTap:
-            onInformationPressed,
+          _StatItem(
+            icon:
+                Icons.directions_car_filled_rounded,
+            iconColor: AppColors.primary,
+            value: '$tripsProposed',
+            label: 'Trajets\nproposés',
           ),
 
-          _MenuDivider(),
+          _StatDivider(),
 
-          _ProfileMenuItem(
-            icon: Icons.route,
-            iconColor:
-            ProfileColors.green,
-            backgroundColor:
-            const Color(0xFFE2F8F4),
-            title: 'Mes trajets',
-            subtitle:
-            'Voir mes trajets proposés et réservés',
-            onTap: onTripsPressed,
+          _StatItem(
+            icon: Icons.people_alt_rounded,
+            iconColor: AppColors.success,
+            value: '$tripsCompleted',
+            label: 'Trajets\neffectués',
           ),
 
-          _MenuDivider(),
+          _StatDivider(),
 
-          _ProfileMenuItem(
-            icon: Icons.star,
+          _StatItem(
+            icon: Icons.star_rounded,
             iconColor:
-            ProfileColors.yellow,
-            backgroundColor:
-            const Color(0xFFFFF2D1),
-            title: 'Mes avis',
-            subtitle:
-            'Ce que les autres disent de moi',
-            onTap: onReviewsPressed,
+                AppColors.accentYellow,
+            value: '$rating',
+            label: 'Note\nmoyenne',
           ),
 
-          _MenuDivider(),
+          _StatDivider(),
 
-          _ProfileMenuItem(
-            icon: Icons.settings,
-            iconColor:
-            ProfileColors.purple,
-            backgroundColor:
-            const Color(0xFFEDEBFF),
-            title: 'Mes préférences',
-            subtitle:
-            'Notifications, confidentialité, langue...',
-            onTap:
-            onPreferencesPressed,
+          _StatItem(
+            icon:
+                Icons.verified_user_rounded,
+            iconColor: isVerified
+                ? AppColors.success
+                : AppColors.textSecondary,
+            value:
+                isVerified ? '100%' : '0%',
+            label: 'Profil\nvérifié',
           ),
         ],
       ),
@@ -468,19 +562,93 @@ class _ProfileMenuCard
   }
 }
 
-class _ProfileMenuItem
-    extends StatelessWidget {
+// ============================================================
+// SÉPARATEUR DES STATISTIQUES
+// ============================================================
+
+class _StatDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 44,
+      color: AppColors.border,
+    );
+  }
+}
+
+// ============================================================
+// ITEM STATISTIQUE
+// ============================================================
+
+class _StatItem extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
-  final Color backgroundColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
+  final String value;
+  final String label;
 
-  const _ProfileMenuItem({
+  const _StatItem({
     required this.icon,
     required this.iconColor,
-    required this.backgroundColor,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: iconColor,
+            size: 20,
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+
+          const SizedBox(height: 2),
+
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10.5,
+              color: AppColors.textSecondary,
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// MENU TILE
+// ============================================================
+
+class _MenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  const _MenuTile({
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
     required this.title,
     required this.subtitle,
     required this.onTap,
@@ -491,60 +659,61 @@ class _ProfileMenuItem
     return InkWell(
       onTap: onTap,
       borderRadius:
-      BorderRadius.circular(18),
-      child: Padding(
+          BorderRadius.circular(16),
+      child: Container(
         padding:
-        const EdgeInsets.symmetric(
-          vertical: 13,
+            const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius:
+              BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.border,
+          ),
         ),
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
-              decoration:
-              BoxDecoration(
-                color: backgroundColor,
-                shape: BoxShape.circle,
+              padding:
+                  const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius:
+                    BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
                 color: iconColor,
-                size: 31,
+                size: 20,
               ),
             ),
 
-            const SizedBox(width: 20),
+            const SizedBox(width: 14),
 
             Expanded(
               child: Column(
                 crossAxisAlignment:
-                CrossAxisAlignment.start,
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style:
-                    const TextStyle(
-                      fontSize: 19,
+                    style: const TextStyle(
                       fontWeight:
-                      FontWeight.w700,
+                          FontWeight.bold,
+                      fontSize: 14.5,
                       color:
-                      ProfileColors.darkBlue,
+                          AppColors.textPrimary,
                     ),
                   ),
 
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
 
                   Text(
                     subtitle,
-                    maxLines: 1,
-                    overflow:
-                    TextOverflow.ellipsis,
-                    style:
-                    const TextStyle(
-                      fontSize: 15,
+                    style: const TextStyle(
+                      fontSize: 12,
                       color:
-                      ProfileColors.mediumBlue,
+                          AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -553,9 +722,8 @@ class _ProfileMenuItem
 
             const Icon(
               Icons.chevron_right_rounded,
-              size: 33,
               color:
-              ProfileColors.darkBlue,
+                  AppColors.textSecondary,
             ),
           ],
         ),
@@ -564,117 +732,62 @@ class _ProfileMenuItem
   }
 }
 
-class _MenuDivider
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Divider(
-      height: 1,
-      color: ProfileColors.border,
-    );
-  }
-}
-
 // ============================================================
-// LOGOUT
+// BOUTON DÉCONNEXION
 // ============================================================
 
-class _LogoutButton
-    extends StatelessWidget {
-  final VoidCallback onPressed;
+class _SignOutButton extends StatelessWidget {
+  final VoidCallback onTap;
 
-  const _LogoutButton({
-    required this.onPressed,
+  const _SignOutButton({
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius:
-        BorderRadius.circular(20),
-        child: Container(
-          width: double.infinity,
-          height: 50,
-          padding:
-          const EdgeInsets.symmetric(
-            horizontal: 28,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF5F5),
-            borderRadius:
-            BorderRadius.circular(20),
-            border: Border.all(
-              color:
-              const Color(0xFFFFE1E1),
+    return InkWell(
+      onTap: onTap,
+      borderRadius:
+          BorderRadius.circular(16),
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 16,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.error
+              .withValues(alpha: 0.08),
+          borderRadius:
+              BorderRadius.circular(16),
+        ),
+        child: const Row(
+          children: [
+            Icon(
+              Icons.logout_rounded,
+              color: AppColors.error,
             ),
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.logout_rounded,
-                size: 25,
-                color:
-                ProfileColors.red,
-              ),
 
-              const SizedBox(width: 25),
+            SizedBox(width: 12),
 
-              const Expanded(
-                child: Text(
-                  'Se déconnecter',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight:
-                    FontWeight.w600,
-                    color:
-                    ProfileColors.red,
-                  ),
+            Expanded(
+              child: Text(
+                'Se déconnecter',
+                style: TextStyle(
+                  color: AppColors.error,
+                  fontWeight:
+                      FontWeight.bold,
+                  fontSize: 15,
                 ),
               ),
+            ),
 
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 32,
-                color:
-                ProfileColors.red,
-              ),
-            ],
-          ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.error,
+            ),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-// ============================================================
-// BOTTOM SHEET ICON
-// ============================================================
-
-class _BottomSheetIcon
-    extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-
-  const _BottomSheetIcon({
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 45,
-      height: 45,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        icon,
-        color: color,
       ),
     );
   }

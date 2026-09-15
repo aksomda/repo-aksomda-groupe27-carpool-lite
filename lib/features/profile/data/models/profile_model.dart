@@ -1,4 +1,3 @@
-// TODO: ProfileModel : mapping Firestore <-> ProfileEntity.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../domain/entities/profile_entity.dart';
@@ -13,6 +12,7 @@ class ProfileModel extends ProfileEntity {
     super.universityId,
     super.campusId,
     super.isVerified,
+    super.photoUrl,
   });
 
   factory ProfileModel.fromFirestore(
@@ -38,6 +38,7 @@ class ProfileModel extends ProfileEntity {
       universityId: data['universityId'] as String?,
       campusId: data['campusId'] as String?,
       isVerified: data['isVerified'] as bool? ?? false,
+      photoUrl: data['photoUrl'] as String?,
     );
   }
 

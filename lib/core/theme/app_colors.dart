@@ -23,4 +23,6 @@ class AppColors {
   static const Color primary = Color(0xFF56AB2F);
 
   static const Color border = Color(0xFFE0E0E0);
+  static const Color accentPurple = Color(0xFF7C4DFF);
+ static const Color success = Color(0xFF2E7D32);
 }

@@ -11,17 +11,8 @@ class HomeBottomNavigation extends StatelessWidget {
     required this.currentIndex,
   });
 
-
-  void _createTrip() {
-    // TODO :
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (_) => const CreateTripScreen(),
-    //   ),
-    // );
+  void _createTrip(BuildContext context) {
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +56,13 @@ class HomeBottomNavigation extends StatelessWidget {
                   label: 'Messages',
                   selected: currentIndex == 3,
                   onTap: () => context.go('/chat'),
-                  flex: 2,
+                ),
+
+                _NavItem(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Profil',
+                  selected: currentIndex == 4,
+                  onTap: () => context.go('/profile'),
                 ),
               ],
             ),
@@ -76,7 +73,7 @@ class HomeBottomNavigation extends StatelessWidget {
               right: 0,
               child: Center(
                 child: GestureDetector(
-                  onTap: _createTrip,
+                  onTap: () => _createTrip(context),
                   child: Container(
                     width: 78,
                     height: 78,
@@ -89,8 +86,9 @@ class HomeBottomNavigation extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary
-                              .withValues(alpha: 0.25),
+                          color: AppColors.primary.withValues(
+                            alpha: 0.25,
+                          ),
                           blurRadius: 15,
                           offset: const Offset(0, 6),
                         ),
@@ -135,8 +133,7 @@ class _NavItem extends StatelessWidget {
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: Column(
-          mainAxisAlignment:
-          MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -164,14 +161,12 @@ class _NavItem extends StatelessWidget {
             const SizedBox(height: 4),
 
             AnimatedContainer(
-              duration:
-              const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 200),
               width: selected ? 40 : 0,
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.primary,
-                borderRadius:
-                BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
           ],

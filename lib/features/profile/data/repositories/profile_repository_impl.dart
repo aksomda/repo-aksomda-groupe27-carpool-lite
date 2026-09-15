@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../domain/entities/profile_entity.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../datasources/profile_remote_datasource.dart';
@@ -10,7 +12,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   @override
   Future<ProfileEntity> getProfile(String uid) {
-    return remoteDataSource.getUserById(uid);
+    return remoteDataSource.getProfile(uid);
   }
 
   @override
@@ -24,7 +26,13 @@ class ProfileRepositoryImpl implements ProfileRepository {
       universityId: profile.universityId,
       campusId: profile.campusId,
       isVerified: profile.isVerified,
+      photoUrl: profile.photoUrl,
     );
     return remoteDataSource.updateProfile(model);
+  }
+
+  @override
+  Future<String> updatePhoto(String uid, Uint8List bytes) {
+    return remoteDataSource.updatePhoto(uid, bytes);
   }
 }
