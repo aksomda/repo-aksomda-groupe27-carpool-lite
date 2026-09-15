@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/di/injector.dart';
 import 'core/firebase/firebase_status.dart';
 import 'core/router/app_router.dart';
 
@@ -40,6 +41,22 @@ void main() async {
     FirebaseStatus.markUnavailable();
     debugPrint('⚠️ Firebase indisponible, bascule en mode hors-ligne : $e');
     debugPrint('$stackTrace');
+  }
+
+  // =======================================================
+  // RESTAURATION DE LA SESSION
+  // =======================================================
+  // Firebase Auth conserve la session d'un lancement à l'autre, mais
+  // AuthProvider repartait de zéro : l'utilisateur se retrouvait déconnecté
+  // à chaque redémarrage, et tous les écrans qui lisent
+  // `Injector.authProvider.user?.uid ?? ''` (demandes de réservation,
+  // véhicules, historique de trajets...) interrogeaient Firestore avec un
+  // identifiant vide, donc n'affichaient rien.
+  //
+  // On restaure la session AVANT runApp() pour que la première évaluation
+  // des redirections du routeur connaisse déjà l'utilisateur.
+  if (FirebaseStatus.available) {
+    await Injector.authProvider.checkCurrentUser();
   }
 
   // =======================================================

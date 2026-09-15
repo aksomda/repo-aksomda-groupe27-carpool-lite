@@ -1,20 +1,15 @@
-// Cas d'usage : publication d'un nouveau trajet (fonctionnalité 04).
+// Cas d'usage : modification d'un trajet existant.
 import '../entities/trip_entity.dart';
 import '../repositories/trip_repository.dart';
 
-class PublishTripUseCase {
+class UpdateTripUseCase {
   final TripRepository repository;
 
-  PublishTripUseCase(this.repository);
+  UpdateTripUseCase(this.repository);
 
-  Future<TripEntity> call(TripEntity trip) {
-    _validate(trip);
-    return repository.publishTrip(trip);
-  }
-
-  void _validate(TripEntity trip) {
-    if (trip.immatriculationVehicule.trim().isEmpty) {
-      throw Exception('Sélectionnez le véhicule utilisé pour ce trajet.');
+  Future<void> call(TripEntity trip) {
+    if (trip.id.trim().isEmpty) {
+      throw Exception('Trajet invalide : identifiant manquant.');
     }
     if (trip.lieuDepart.trim().isEmpty) {
       throw Exception('Le lieu de départ est requis.');
@@ -28,5 +23,6 @@ class PublishTripUseCase {
     if (trip.prixParPlace <= 0) {
       throw Exception('Le prix par place doit être supérieur à 0.');
     }
+    return repository.updateTrip(trip);
   }
 }

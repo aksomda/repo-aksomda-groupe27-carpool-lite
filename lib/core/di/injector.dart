@@ -11,12 +11,6 @@ import '../../features/auth/domain/usecases/check_email_verification_usecase.dar
 import '../../features/auth/domain/usecases/send_email_verification_usecase.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 
-import '../../features/universities/data/datasources/university_remote_datasource.dart';
-import '../../features/universities/data/repositories/university_repository_impl.dart';
-import '../../features/universities/domain/usecases/get_universities_usecase.dart';
-import '../../features/universities/domain/usecases/add_university_usecase.dart';
-import '../../features/universities/presentation/providers/university_provider.dart';
-
 import '../../features/reviews/data/datasources/review_remote_datasource.dart';
 import '../../features/reviews/data/repositories/review_repository_impl.dart';
 import '../../features/reviews/domain/usecases/create_review.dart';
@@ -34,6 +28,32 @@ import '../../features/profile/data/repositories/profile_repository_impl.dart';
 import '../../features/profile/domain/usecases/get_profile_usecase.dart';
 import '../../features/profile/domain/usecases/update_profile_usecase.dart';
 import '../../features/profile/presentation/providers/profile_provider.dart';
+
+import '../../features/vehicles/data/datasources/vehicle_remote_datasource.dart';
+import '../../features/vehicles/data/repositories/vehicle_repository_impl.dart';
+import '../../features/vehicles/domain/usecases/add_vehicle_usecase.dart';
+import '../../features/vehicles/domain/usecases/update_vehicle_usecase.dart';
+import '../../features/vehicles/domain/usecases/get_user_vehicles_usecase.dart';
+import '../../features/vehicles/presentation/providers/vehicle_provider.dart';
+
+import '../../features/trips/data/datasources/trip_remote_datasource.dart';
+import '../../features/trips/data/repositories/trip_repository_impl.dart';
+import '../../features/trips/domain/usecases/publish_trip_usecase.dart';
+import '../../features/trips/domain/usecases/update_trip_usecase.dart';
+import '../../features/trips/domain/usecases/get_trip_history_usecase.dart';
+import '../../features/trips/domain/usecases/search_trips_usecase.dart';
+import '../../features/trips/presentation/providers/trip_provider.dart';
+import '../network/maps_api_client.dart';
+
+import '../../features/bookings/data/datasources/booking_remote_datasource.dart';
+import '../../features/bookings/data/repositories/booking_repository_impl.dart';
+import '../../features/bookings/domain/usecases/cancel_booking_usecase.dart';
+import '../../features/bookings/domain/usecases/confirm_booking_usecase.dart';
+import '../../features/bookings/domain/usecases/get_driver_requests_usecase.dart';
+import '../../features/bookings/domain/usecases/get_my_requests_usecase.dart';
+import '../../features/bookings/domain/usecases/reject_booking_usecase.dart';
+import '../../features/bookings/domain/usecases/request_booking_usecase.dart';
+import '../../features/bookings/presentation/providers/booking_provider.dart';
 
 /// Point unique de câblage manuel des dépendances (pas d'injection de code
 /// généré : on construit ici, une seule fois, les datasources → repository
@@ -62,16 +82,6 @@ class Injector {
     ),
     authRepository: authRepository,
   );
-
-  static UniversityProvider createUniversityProvider() {
-    final repository = UniversityRepositoryImpl(
-      UniversityRemoteDataSource(firestore: FirebaseFirestore.instance),
-    );
-    return UniversityProvider(
-      getUniversitiesUseCase: GetUniversitiesUseCase(repository),
-      addUniversityUseCase: AddUniversityUseCase(repository),
-    );
-  }
 
   static ReviewProvider createReviewProvider() {
     final repository = ReviewRepositoryImpl(
@@ -102,6 +112,48 @@ class Injector {
     return ProfileProvider(
       getProfileUseCase: GetProfileUseCase(repository),
       updateProfileUseCase: UpdateProfileUseCase(repository),
+    );
+  }
+
+  static VehicleProvider createVehicleProvider() {
+    final repository = VehicleRepositoryImpl(
+      VehicleRemoteDataSource(firestore: FirebaseFirestore.instance),
+    );
+    return VehicleProvider(
+      addVehicleUseCase: AddVehicleUseCase(repository),
+      updateVehicleUseCase: UpdateVehicleUseCase(repository),
+      getUserVehiclesUseCase: GetUserVehiclesUseCase(repository),
+    );
+  }
+
+  /// Client HTTP partagé pour les appels à l'API Google Distance Matrix
+  /// (une seule instance pour toute l'app).
+  static final MapsApiClient mapsApiClient = MapsApiClient();
+
+  static TripProvider createTripProvider() {
+    final repository = TripRepositoryImpl(
+      TripRemoteDataSource(firestore: FirebaseFirestore.instance),
+    );
+    return TripProvider(
+      publishTripUseCase: PublishTripUseCase(repository),
+      updateTripUseCase: UpdateTripUseCase(repository),
+      getTripHistoryUseCase: GetTripHistoryUseCase(repository),
+      searchTripsUseCase: SearchTripsUseCase(repository),
+      mapsApiClient: mapsApiClient,
+    );
+  }
+
+  static BookingProvider createBookingProvider() {
+    final repository = BookingRepositoryImpl(
+      BookingRemoteDataSource(firestore: FirebaseFirestore.instance),
+    );
+    return BookingProvider(
+      requestBookingUseCase: RequestBookingUseCase(repository),
+      confirmBookingUseCase: ConfirmBookingUseCase(repository),
+      rejectBookingUseCase: RejectBookingUseCase(repository),
+      cancelBookingUseCase: CancelBookingUseCase(repository),
+      getDriverRequestsUseCase: GetDriverRequestsUseCase(repository),
+      getMyRequestsUseCase: GetMyRequestsUseCase(repository),
     );
   }
 }

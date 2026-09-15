@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/notification_provider.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 
 class NotificationsScreen
     extends ConsumerWidget {
@@ -23,6 +24,7 @@ class NotificationsScreen
     );
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text(
           'Notifications',

@@ -3,6 +3,5 @@
     "flutterTools.displayMobxContextMenu": false,
     "flutterTools.displayRiverpodContextMenu": true,
     "flutterTools.displayModularContextMenu": false,
-    "flutterTools.displaySignalsContextMenu": false,
-    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable"
+    "flutterTools.displaySignalsContextMenu": false
 }

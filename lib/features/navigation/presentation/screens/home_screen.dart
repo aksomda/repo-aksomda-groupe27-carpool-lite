@@ -72,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
       key: _scaffoldKey,
       extendBody: false,
 
-      drawer: AppDrawer(authProvider: widget.authProvider),
+      drawer: const AppDrawer(),
 
       body: SafeArea(
         bottom: false,

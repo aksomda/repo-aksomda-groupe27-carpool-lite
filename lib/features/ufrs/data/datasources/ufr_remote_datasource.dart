@@ -34,7 +34,6 @@ class UfrRemoteDataSource {
   Stream<List<UfrModel>> getUfrs() {
     return _collection
         .snapshots()
-        .timeout(kFirestoreTimeout, onTimeout: (sink) => sink.addError(_timeoutMessage))
         .map((snapshot) => snapshot.docs
             .map(UfrModel.fromFirestore)
             .where((ufr) => !ufr.isDeleted)

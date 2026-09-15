@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
+import '../../../../core/di/injector.dart';
 
-/// Menu latéral (Drawer) de l'espace étudiant.
+/// Menu latéral (Drawer) commun à tout l'espace étudiant ET à l'espace
+/// administrateur (section ADMINISTRATEUR affichée conditionnellement).
 ///
-/// Reprend l'identité visuelle du menu administrateur.
-/// Le logo CarPool Lite est affiché en haut du Drawer,
-/// avant les informations de l'utilisateur.
+/// Fichier canonique unique : avant, deux Drawer distincts coexistaient
+/// (un pour l'accueil étudiant, un pour les pages admin/véhicules/trajets)
+/// à la suite de la fusion des codes des différents contributeurs. Celui-ci
+/// reprend l'identité visuelle (logo, en-tête coloré) et regroupe toutes
+/// les sections des deux anciens menus.
 class AppDrawer extends StatelessWidget {
-  final AuthProvider authProvider;
-
-  const AppDrawer({super.key, required this.authProvider});
+  const AppDrawer({super.key});
 
   static const _kBrandBlue = Color(0xFF1A56DB);
   static const _kBrandRed = Color(0xFFEF4444);
 
+  bool get _isAdmin =>
+      (Injector.authProvider.user?.role ?? 'student').toLowerCase() == 'admin';
+
   void _go(BuildContext context, String route) {
     Navigator.pop(context);
-    context.push(route);
+    context.go(route);
   }
 
   Widget _sectionLabel(String label) {
@@ -84,22 +87,14 @@ class AppDrawer extends StatelessWidget {
 
   Future<void> _signOut(BuildContext context) async {
     Navigator.pop(context);
-
-    await authProvider.signOut();
-
-    if (context.mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => LoginScreen(authProvider: authProvider),
-        ),
-        (_) => false,
-      );
-    }
+    await Injector.authProvider.signOut();
+    if (context.mounted) context.go('/auth');
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = authProvider.user;
+    final user = Injector.authProvider.user;
+    final isAdmin = _isAdmin;
 
     return Drawer(
       backgroundColor: Colors.white,
@@ -268,6 +263,47 @@ class AppDrawer extends StatelessWidget {
                     label: 'Profil',
                     route: '/profile',
                   ),
+
+                  if (isAdmin) ...[
+                    _sectionLabel('ADMINISTRATEUR'),
+
+                    _menuItem(
+                      context,
+                      icon: Icons.people_alt_outlined,
+                      label: 'Gestion des utilisateurs',
+                      route: '/admin/users',
+                    ),
+                    _menuItem(
+                      context,
+                      icon: Icons.account_balance_outlined,
+                      label: 'Gestion des universités',
+                      route: '/admin/universities',
+                    ),
+                    _menuItem(
+                      context,
+                      icon: Icons.location_city_outlined,
+                      label: 'Gestion des campus',
+                      route: '/admin/campuses',
+                    ),
+                    _menuItem(
+                      context,
+                      icon: Icons.school_outlined,
+                      label: 'Gestion des formations',
+                      route: '/admin/formations',
+                    ),
+                    _menuItem(
+                      context,
+                      icon: Icons.layers_outlined,
+                      label: 'Gestion des niveaux',
+                      route: '/admin/levels',
+                    ),
+                    _menuItem(
+                      context,
+                      icon: Icons.account_tree_outlined,
+                      label: 'Gestion des UFR',
+                      route: '/admin/ufrs',
+                    ),
+                  ],
 
                   const SizedBox(height: 8),
                 ],

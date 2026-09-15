@@ -10,12 +10,11 @@ import '../di/injector.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/verify_student_screen.dart';
-import '../../features/universities/presentation/screens/university_selection_screen.dart';
 import '../../features/navigation/presentation/screens/app_dashboard_screen.dart';
 import '../../features/trips/presentation/screens/publish_trip_screen.dart';
 import '../../features/trips/presentation/screens/search_trips_screen.dart';
 import '../../features/trips/presentation/screens/trip_history_screen.dart';
-import '../../features/bookings/presentation/screens/my_bookings_screen.dart';
+import '../../features/bookings/presentation/screens/booking_requests_screen.dart';
 import '../../features/vehicles/presentation/screens/vehicle_list_screen.dart';
 import '../../features/reviews/presentation/screens/user_reviews_screen.dart';
 import '../../features/reviews/presentation/pages/create_review_page.dart';
@@ -29,19 +28,43 @@ import '../../features/universities/presentation/pages/university_list_page.dart
 import '../../features/user_management/presentation/screens/user_management_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 
+/// Seules routes accessibles sans être connecté.
+///
+/// `/auth/verify-student` en fait partie mais reste atteignable une fois
+/// connecté : c'est l'étape qui suit immédiatement l'inscription.
+const Set<String> _publicRoutes = {
+  '/auth',
+  '/auth/register',
+  '/auth/verify-student',
+};
+
 final GoRouter appRouter = GoRouter(
   initialLocation: '/auth',
+  // Sans `refreshListenable`, GoRouter n'évalue `redirect` qu'au moment
+  // d'une navigation : une connexion ou une déconnexion ne provoquait
+  // aucune réévaluation, et l'utilisateur restait sur un écran auquel il
+  // n'avait plus (ou pas encore) droit.
+  refreshListenable: Injector.authProvider,
   redirect: (_, state) {
     final location = state.matchedLocation;
     final user = Injector.authProvider.user;
     final isAdmin = (user?.role ?? 'student').toLowerCase() == 'admin';
 
-    final isAdminRoute = location.startsWith('/admin');
-    if (isAdminRoute) {
-      if (user == null) return '/auth';
-      if (!isAdmin) return '/home';
-      return null;
+    // Utilisateur non connecté : tout ce qui n'est pas public est refusé.
+    // Auparavant seules les routes /admin étaient protégées ; les écrans
+    // métier s'ouvraient donc avec un uid vide — d'où des listes
+    // systématiquement vides — ou plantaient sur un `user!`.
+    if (user == null) {
+      return _publicRoutes.contains(location) ? null : '/auth';
     }
+
+    // Déjà connecté : l'écran de connexion n'a plus de raison d'être.
+    if (location == '/auth') {
+      return isAdmin ? '/admin/dashboard' : '/home';
+    }
+
+    // Espace d'administration réservé au rôle "admin".
+    if (location.startsWith('/admin') && !isAdmin) return '/home';
 
     // Un administrateur qui atterrit sur l'accueil étudiant (ex. juste
     // après connexion) est redirigé vers son propre tableau de bord.
@@ -79,30 +102,62 @@ final GoRouter appRouter = GoRouter(
         profileProvider: Injector.createProfileProvider(),
       ),
     ),
+
     GoRoute(
-      path: '/universities',
-      builder: (_, _) => ChangeNotifierProvider(
-        create: (_) => Injector.createUniversityProvider(),
-        child: const UniversitySelectionScreen(),
+      path: '/trips/publish',
+      builder: (_, _) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => Injector.createTripProvider()),
+          ChangeNotifierProvider(create: (_) => Injector.createVehicleProvider()),
+        ],
+        child: const PublishTripScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/trips/search',
+      builder: (_, _) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => Injector.createTripProvider()),
+          ChangeNotifierProvider(create: (_) => Injector.createBookingProvider()),
+        ],
+        child: const SearchTripsScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/trips/history',
+      builder: (_, _) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => Injector.createTripProvider()),
+          ChangeNotifierProvider(create: (_) => Injector.createVehicleProvider()),
+        ],
+        child: const TripHistoryScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/trips',
+      builder: (_, _) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => Injector.createTripProvider()),
+          ChangeNotifierProvider(create: (_) => Injector.createBookingProvider()),
+        ],
+        child: const SearchTripsScreen(),
       ),
     ),
 
     GoRoute(
-      path: '/trips/publish',
-      builder: (_, _) => const PublishTripScreen(),
+      path: '/bookings',
+      builder: (_, _) => ChangeNotifierProvider(
+        create: (_) => Injector.createBookingProvider(),
+        child: const BookingRequestsScreen(),
+      ),
     ),
     GoRoute(
-      path: '/trips/search',
-      builder: (_, _) => const SearchTripsScreen(),
+      path: '/vehicles',
+      builder: (_, _) => ChangeNotifierProvider(
+        create: (_) => Injector.createVehicleProvider(),
+        child: const VehicleListScreen(),
+      ),
     ),
-    GoRoute(
-      path: '/trips/history',
-      builder: (_, _) => const TripHistoryScreen(),
-    ),
-    GoRoute(path: '/trips', builder: (_, _) => const SearchTripsScreen()),
-
-    GoRoute(path: '/bookings', builder: (_, _) => const MyBookingsScreen()),
-    GoRoute(path: '/vehicles', builder: (_, _) => const VehicleListScreen()),
     GoRoute(
       path: '/chat',
       builder: (_, _) => ProviderScope(
@@ -111,7 +166,12 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/notifications',
-      builder: (_, _) => const NotificationsScreen(userId: ''),
+      // L'identifiant était codé en dur à la chaîne vide : la sous-collection
+      // interrogée était `users//notifications`, donc l'écran restait
+      // désespérément vide.
+      builder: (_, _) => NotificationsScreen(
+        userId: Injector.authProvider.user?.uid ?? '',
+      ),
     ),
     GoRoute(
       path: '/reviews',

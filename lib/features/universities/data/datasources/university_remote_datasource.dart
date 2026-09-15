@@ -62,15 +62,6 @@ class UniversityRemoteDataSource {
       return firestore
           .collection('universities')
           .snapshots()
-          .timeout(
-            kFirestoreTimeout,
-            onTimeout: (sink) => sink.addError(
-              "Délai dépassé en contactant Firestore. Vérifiez que la base "
-              "Firestore a bien été créée pour votre projet Firebase et que "
-              "les règles de sécurité autorisent la lecture "
-              "(voir DEPANNAGE_FIRESTORE.md).",
-            ),
-          )
           .map((snapshot) {
             return snapshot.docs.map((doc) => UniversityModel.fromFirestore(doc)).toList();
           });

@@ -1,5 +1,6 @@
 {
   "projects": {
+    "default": "carpoollite",
     "staging.carpoollite": "carpoollite"
   },
   "targets": {},

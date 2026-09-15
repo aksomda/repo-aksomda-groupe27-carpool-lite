@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/widgets/app_drawer.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../data/models/formation_model.dart';
 import '../../data/repositories/formation_repository.dart';

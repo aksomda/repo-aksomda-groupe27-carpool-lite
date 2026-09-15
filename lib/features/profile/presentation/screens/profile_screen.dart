@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 // import '../../../navigation/presentation/widgets/bottom_navigation.dart'; // masqué temporairement
 import '../providers/profile_provider.dart';
 import '../widgets/profile_avatar.dart';
@@ -199,6 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final profile = widget.profileProvider.profile;
 
         return Scaffold(
+          drawer: const AppDrawer(),
           appBar: AppBar(
             title: const Text('Mon profil'),
             actions: [

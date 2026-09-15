@@ -32,7 +32,6 @@ class AcademicLevelRemoteDataSource {
   Stream<List<AcademicLevelModel>> getLevels() {
     return _collection
         .snapshots()
-        .timeout(kFirestoreTimeout, onTimeout: (sink) => sink.addError(_timeoutMessage))
         .map((snapshot) => snapshot.docs
             .map(AcademicLevelModel.fromFirestore)
             .where((level) => !level.isDeleted)

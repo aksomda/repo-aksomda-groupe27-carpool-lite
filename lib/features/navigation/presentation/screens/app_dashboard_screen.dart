@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
 import 'admin_dashboard_screen.dart';
 
 /// Tableau de bord réservé aux administrateurs, atteint via la route
@@ -38,12 +37,7 @@ class AdminHomeScreen extends StatelessWidget {
               if (value == 'logout') {
                 await authProvider.signOut();
                 if (context.mounted) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (_) => LoginScreen(authProvider: authProvider),
-                    ),
-                    (_) => false,
-                  );
+                  context.go('/auth');
                 }
               }
             },
@@ -325,12 +319,7 @@ class _AdminDrawer extends StatelessWidget {
                 Navigator.pop(context);
                 await authProvider.signOut();
                 if (context.mounted) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (_) => LoginScreen(authProvider: authProvider),
-                    ),
-                    (_) => false,
-                  );
+                  context.go('/auth');
                 }
               },
             ),

@@ -2,55 +2,218 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Authentification maintenant câblée (Firebase Auth + AuthProvider) :
-    // ces règles remplacent le mode "tout ouvert" par un contrôle minimal
-    // par utilisateur connecté. À affiner selon les besoins métier réels
-    // avant mise en production (ex. lecture publique de "universities").
+
+    // =====================================================================
+    // FONCTIONS UTILITAIRES
+    // =====================================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Le rôle est lu dans le document utilisateur. `get()` contourne les
+    // règles, il n'y a donc pas de récursion.
+    //
+    // Note pour plus tard : une custom claim Firebase Auth
+    // (`request.auth.token.admin`) éviterait cette lecture supplémentaire à
+    // chaque évaluation, mais demande une Cloud Function pour la poser.
+    function isAdmin() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid))
+             .data.role == 'admin';
+    }
+
+    // =====================================================================
+    // UTILISATEURS
+    // =====================================================================
+    // ⚠️ Point critique : `role` et `isActive` ne doivent JAMAIS être
+    // modifiables par l'utilisateur lui-même. La règle précédente
+    // autorisait toute écriture sur son propre document, si bien que
+    // n'importe quel étudiant pouvait se passer `role: 'admin'` et ouvrir
+    // l'intégralité de l'espace d'administration (le routeur se fonde sur
+    // ce champ). Même chose pour `isActive`, qui conditionne la connexion.
 
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isSignedIn();
+
+      // À l'inscription, l'utilisateur crée son propre profil : rôle
+      // étudiant imposé, compte inactif tant qu'un administrateur ne l'a
+      // pas validé. Un administrateur, lui, peut créer n'importe quel
+      // profil (écran « Gestion des utilisateurs »).
+      allow create: if isAdmin()
+        || (isSelf(userId)
+            && request.resource.data.role == 'student'
+            && request.resource.data.isActive == false);
+
+      allow update: if isAdmin()
+        || (isSelf(userId)
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.isActive == resource.data.isActive);
+
+      allow delete: if isAdmin();
+
+      // Notifications et jetons FCM : strictement personnels.
+      match /notifications/{notificationId} {
+        allow read, write: if isSelf(userId);
+      }
+
+      match /devices/{deviceId} {
+        allow read, write: if isSelf(userId);
+      }
     }
+
+    // =====================================================================
+    // RÉFÉRENTIEL ACADÉMIQUE (écriture réservée aux administrateurs)
+    // =====================================================================
+    // Universités et campus sont lisibles sans authentification : l'écran
+    // d'inscription demande de les choisir avant que le compte n'existe.
 
     match /universities/{docId} {
-      allow read: if true; // besoin de sélection avant inscription/connexion
-      allow write: if request.auth != null;
+      allow read: if true;
+      allow write: if isAdmin();
     }
+
+    match /campus/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /ufrs/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /formations/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /academic_levels/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Base des étudiants inscrits, utilisée pour la vérification du statut
+    // étudiant. Alimentée par l'administration, jamais par l'application.
+    match /students/{studentId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // =====================================================================
+    // AUTHENTIFICATION ANNEXE
+    // =====================================================================
 
     // ⚠️ Un utilisateur authentifié peut lire SON PROPRE code ici, ce qui
-    // affaiblit la garantie "preuve de possession de la boîte mail" (il n'a
-    // pas besoin de consulter son email pour connaître le code). Pour une
-    // vérification réellement sûre, migrer la comparaison du code vers une
-    // Cloud Function (Admin SDK, qui ignore ces règles) plutôt qu'une
-    // lecture cliente comme actuellement implémenté dans
-    // AuthRemoteDataSource.verifyEmailOtp.
+    // affaiblit la garantie « preuve de possession de la boîte mail » (il
+    // n'a pas besoin de consulter son email pour connaître le code). Pour
+    // une vérification réellement sûre, migrer la comparaison du code vers
+    // une Cloud Function (Admin SDK, qui ignore ces règles).
     match /otp_codes/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isSelf(userId);
     }
 
-    // Écriture réservée à l'app (création de la demande d'email) ; 
-    // la lecture/traitement réel est fait côté extension Firebase "Trigger
-    // Email" avec les droits admin, donc pas besoin d'autoriser la lecture
-    // ici.
+    // Écriture réservée à l'app (création de la demande d'email) ; la
+    // lecture/traitement réel est fait côté extension Firebase « Trigger
+    // Email » avec les droits admin.
     match /mail/{docId} {
-      allow create: if request.auth != null;
+      allow create: if isSignedIn();
       allow read, update, delete: if false;
     }
 
-    // Un avis ne peut être créé que par son auteur (reviewerId ==
-    // uid connecté) ; une fois publié, il n'est ni modifiable ni
-    // supprimable par un client (évite qu'un utilisateur trafique sa
-    // propre note a posteriori). La lecture reste ouverte aux comptes
-    // authentifiés pour permettre l'affichage des stats/avis reçus.
+    // =====================================================================
+    // MÉTIER
+    // =====================================================================
+
+    // Un avis ne peut être créé que par son auteur ; une fois publié il
+    // n'est ni modifiable ni supprimable par un client (évite qu'un
+    // utilisateur trafique sa propre note a posteriori).
     match /reviews/{reviewId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
         && request.resource.data.reviewerId == request.auth.uid;
       allow update, delete: if false;
     }
 
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // Un véhicule n'est créé/modifié que par son propriétaire. La lecture
+    // reste ouverte aux comptes authentifiés pour permettre de choisir un
+    // véhicule au moment de publier un trajet.
+    match /vehicles/{vehicleId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if false;
     }
+
+    // Un trajet n'est publié/modifié que par son conducteur. La lecture
+    // reste ouverte aux comptes authentifiés pour permettre la recherche
+    // de trajets par les passagers.
+    match /trips/{tripId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.driverId == request.auth.uid;
+      allow update: if isSignedIn()
+        && resource.data.driverId == request.auth.uid
+        && request.resource.data.driverId == resource.data.driverId;
+      allow delete: if false;
+    }
+
+    // Une demande de réservation n'est lisible que par le passager qui l'a
+    // envoyée ou le conducteur qui l'a reçue. Elle est créée par le
+    // passager et mise à jour (changement de statut) soit par le
+    // conducteur (accepter/refuser), soit par le passager (annuler).
+    match /rideRequests/{requestId} {
+      allow read: if isSignedIn()
+        && (resource.data.driverId == request.auth.uid
+            || resource.data.passengerId == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.passengerId == request.auth.uid
+        && request.resource.data.driverId != request.auth.uid;
+      allow update: if isSignedIn()
+        && (resource.data.driverId == request.auth.uid
+            || resource.data.passengerId == request.auth.uid)
+        && request.resource.data.driverId == resource.data.driverId
+        && request.resource.data.passengerId == resource.data.passengerId;
+      allow delete: if false;
+    }
+
+    // Messagerie : un message n'est visible que par ses deux participants.
+    match /messages/{messageId} {
+      allow read: if isSignedIn()
+        && request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn()
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.participants.hasAll([
+             request.resource.data.senderId,
+             request.resource.data.receiverId,
+           ]);
+      // Sert uniquement à marquer un message comme lu.
+      allow update: if isSignedIn()
+        && request.auth.uid in resource.data.participants;
+      allow delete: if false;
+    }
+
+    // Signalements : déposés par n'importe quel compte, traités par
+    // l'administration uniquement.
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // =====================================================================
+    // TOUT LE RESTE EST REFUSÉ
+    // =====================================================================
+    // La règle fourre-tout `match /{document=**} { allow read, write: if
+    // request.auth != null; }` qui figurait ici annulait l'intérêt de
+    // toutes les règles ci-dessus pour la moindre collection non listée.
+    // Une nouvelle collection doit désormais être déclarée explicitement.
   }
 }

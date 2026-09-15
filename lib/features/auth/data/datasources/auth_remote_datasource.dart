@@ -119,7 +119,12 @@ class AuthRemoteDataSource {
     await firebaseAuth.signOut();
   }
 
-  /// Récupération de l'utilisateur actuellement connecté
+  /// Récupération de l'utilisateur actuellement connecté.
+  ///
+  /// Firebase Auth conserve la session entre deux lancements de
+  /// l'application : c'est cette méthode qui permet de la restaurer au
+  /// démarrage (voir `main.dart`) au lieu de renvoyer l'utilisateur sur
+  /// l'écran de connexion à chaque fois.
   Future<UserModel?> getCurrentUser() async {
     final User? firebaseUser = firebaseAuth.currentUser;
 
@@ -137,7 +142,17 @@ class AuthRemoteDataSource {
       return null;
     }
 
-    return UserModel.fromFirestore(document);
+    final user = UserModel.fromFirestore(document);
+
+    // Même contrôle qu'à la connexion : un compte désactivé par un
+    // administrateur ne doit pas pouvoir revenir dans l'application via la
+    // session persistée.
+    if (!user.isActive) {
+      await firebaseAuth.signOut();
+      return null;
+    }
+
+    return user;
   }
 
   /// Vérifie qu'un étudiant est bien enregistré

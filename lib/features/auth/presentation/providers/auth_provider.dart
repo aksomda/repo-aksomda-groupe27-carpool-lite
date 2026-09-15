@@ -195,7 +195,12 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Récupération de la session existante
+  /// Restaure la session Firebase persistée, au démarrage de l'application.
+  ///
+  /// Un échec ici n'est pas une erreur à montrer à l'utilisateur : cela
+  /// signifie simplement qu'aucune session exploitable n'a été retrouvée et
+  /// que l'on affiche l'écran de connexion. Remonter le message
+  /// polluerait ce dernier avec une erreur qu'il n'a pas provoquée.
   Future<void> checkCurrentUser() async {
     _setLoading(true);
     _clearError();
@@ -203,7 +208,8 @@ class AuthProvider extends ChangeNotifier {
     try {
       _user = await authRepository.getCurrentUser();
     } catch (e) {
-      _errorMessage = _cleanErrorMessage(e);
+      _user = null;
+      debugPrint('Session non restaurée : ${_cleanErrorMessage(e)}');
     } finally {
       _setLoading(false);
     }

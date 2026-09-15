@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/widgets/app_drawer.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../../data/models/university_model.dart';
 import '../../data/repositories/university_repository.dart';
 import '../widgets/university_card.dart';

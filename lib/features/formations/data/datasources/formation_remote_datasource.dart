@@ -32,7 +32,6 @@ class FormationRemoteDataSource {
   Stream<List<FormationModel>> getFormations() {
     return _collection
         .snapshots()
-        .timeout(kFirestoreTimeout, onTimeout: (sink) => sink.addError(_timeoutMessage))
         .map((snapshot) => snapshot.docs
             .map(FormationModel.fromFirestore)
             .where((formation) => !formation.isDeleted)

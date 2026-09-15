@@ -51,7 +51,6 @@ class CampusRemoteDataSource {
     return FirestoreRetry.runStream(() {
       return _collection
           .snapshots()
-          .timeout(kFirestoreTimeout, onTimeout: (sink) => sink.addError(_timeoutMessage))
           .map((snapshot) => snapshot.docs
               .map(CampusModel.fromFirestore)
               .where((campus) => !campus.isDeleted)
