@@ -1,90 +1,261 @@
-// Accès à la collection trips dans Firestore.
-import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../../../core/constants/firestore_timeout.dart';
-import '../../../../core/firebase/firestore_retry.dart';
+import '../../domain/entities/trip_entity.dart';
 import '../models/trip_model.dart';
 
 class TripRemoteDataSource {
   final FirebaseFirestore firestore;
 
-  TripRemoteDataSource({required this.firestore});
+  TripRemoteDataSource({
+    required this.firestore,
+  });
 
-  CollectionReference<Map<String, dynamic>> get _trips =>
-      firestore.collection('trips');
-
-  /// Génère un identifiant Firestore avant écriture, pour connaître
-  /// id_trajet côté client avant le `set`.
-  String newTripId() => _trips.doc().id;
-
-  /// Écriture ponctuelle : jusqu'à 2 tentatives (1 retry).
-  Future<void> createTrip(TripModel trip) {
-    return FirestoreRetry.run(() async {
-      try {
-        await _trips
-            .doc(trip.id)
-            .set(trip.toFirestore())
-            .timeout(kFirestoreTimeout);
-      } on TimeoutException {
-        throw Exception(
-          "Délai dépassé en contactant Firestore. Vérifiez votre connexion "
-          "et les règles de sécurité Firestore.",
-        );
-      } catch (e) {
-        throw Exception('Erreur lors de la publication du trajet : $e');
-      }
-    }, maxAttempts: 2);
+  CollectionReference<Map<String, dynamic>>
+      get _tripsCollection {
+    return firestore.collection('trips');
   }
 
-  Future<void> updateTrip(TripModel trip) {
-    return FirestoreRetry.run(() async {
-      try {
-        await _trips
-            .doc(trip.id)
-            .update(trip.toFirestore())
-            .timeout(kFirestoreTimeout);
-      } on TimeoutException {
-        throw Exception(
-          "Délai dépassé en contactant Firestore. Vérifiez votre connexion "
-          "et les règles de sécurité Firestore.",
-        );
-      } catch (e) {
-        throw Exception('Erreur lors de la modification du trajet : $e');
-      }
-    }, maxAttempts: 2);
+  Future<TripModel> publishTrip({
+    required String driverId,
+    required String departure,
+    required String arrival,
+
+    required double departureLatitude,
+    required double departureLongitude,
+
+    required double arrivalLatitude,
+    required double arrivalLongitude,
+
+    required DateTime departureDateTime,
+    required double pricePerSeat,
+    required int totalSeats,
+  }) async {
+    if (driverId.isEmpty) {
+      throw Exception('Conducteur non identifié.');
+    }
+
+    if (departure.trim().isEmpty) {
+      throw Exception('Le lieu de départ est obligatoire.');
+    }
+
+    if (arrival.trim().isEmpty) {
+      throw Exception('Le lieu d’arrivée est obligatoire.');
+    }
+
+    if (totalSeats <= 0) {
+      throw Exception(
+        'Le nombre de places doit être supérieur à zéro.',
+      );
+    }
+
+    if (pricePerSeat < 0) {
+      throw Exception(
+        'Le prix ne peut pas être négatif.',
+      );
+    }
+
+    if (!departureDateTime.isAfter(DateTime.now())) {
+      throw Exception(
+        'La date du trajet doit être dans le futur.',
+      );
+    }
+
+    final document = _tripsCollection.doc();
+
+    final trip = TripModel(
+      id: document.id,
+      driverId: driverId,
+
+      departure: departure.trim(),
+      arrival: arrival.trim(),
+
+      departureLatitude: departureLatitude,
+      departureLongitude: departureLongitude,
+
+      arrivalLatitude: arrivalLatitude,
+      arrivalLongitude: arrivalLongitude,
+
+      departureDateTime: departureDateTime,
+
+      pricePerSeat: pricePerSeat,
+
+      totalSeats: totalSeats,
+      availableSeats: totalSeats,
+
+      status: TripStatus.active,
+
+      createdAt: DateTime.now(),
+    );
+
+    await document.set(
+      trip.toFirestore(),
+    );
+
+    return trip;
   }
 
-  /// Flux affiché en direct dans l'historique des trajets de l'utilisateur
-  /// connecté, du plus récent au plus ancien.
-  Stream<List<TripModel>> getTripHistory(String driverId) {
-    return FirestoreRetry.runStream(() {
-      return _trips
-          .where('driverId', isEqualTo: driverId)
-          .orderBy('createdAt', descending: true)
-          .snapshots()
-          .map((snapshot) {
-            return snapshot.docs
-                .map((doc) => TripModel.fromFirestore(doc.id, doc.data()))
-                .toList();
-          });
+  Stream<List<TripModel>> searchTrips({
+    String? departure,
+    String? arrival,
+    DateTime? date,
+  }) {
+    Query<Map<String, dynamic>> query =
+        _tripsCollection.where(
+      'status',
+      isEqualTo: TripStatus.active.name,
+    );
+
+    if (date != null) {
+      final start = DateTime(
+        date.year,
+        date.month,
+        date.day,
+      );
+
+      final end = start.add(
+        const Duration(days: 1),
+      );
+
+      query = query
+          .where(
+            'departureDateTime',
+            isGreaterThanOrEqualTo:
+                Timestamp.fromDate(start),
+          )
+          .where(
+            'departureDateTime',
+            isLessThan:
+                Timestamp.fromDate(end),
+          );
+    }
+
+    return query
+        .orderBy(
+          'departureDateTime',
+          descending: false,
+        )
+        .snapshots()
+        .map((snapshot) {
+      final trips = snapshot.docs
+          .map(TripModel.fromFirestore)
+          .where(
+            (trip) => trip.availableSeats > 0,
+          )
+          .where((trip) {
+        if (departure == null ||
+            departure.trim().isEmpty) {
+          return true;
+        }
+
+        return trip.departure
+            .toLowerCase()
+            .contains(
+              departure.toLowerCase().trim(),
+            );
+      }).where((trip) {
+        if (arrival == null ||
+            arrival.trim().isEmpty) {
+          return true;
+        }
+
+        return trip.arrival
+            .toLowerCase()
+            .contains(
+              arrival.toLowerCase().trim(),
+            );
+      }).toList();
+
+      return trips;
     });
   }
 
-  /// Flux de l'ensemble des trajets enregistrés dans Firestore, du plus
-  /// récent au plus ancien : alimente le module de recherche de trajets,
-  /// où un passager consulte les trajets publiés par tous les conducteurs.
-  Stream<List<TripModel>> getAllTrips() {
-    return FirestoreRetry.runStream(() {
-      return _trips
-          .orderBy('createdAt', descending: true)
-          .snapshots()
-          .map((snapshot) {
-            return snapshot.docs
-                .map((doc) => TripModel.fromFirestore(doc.id, doc.data()))
-                .toList();
-          });
-    });
+  Future<TripModel?> getTripById(
+    String tripId,
+  ) async {
+    final document =
+        await _tripsCollection.doc(tripId).get();
+
+    if (!document.exists) {
+      return null;
+    }
+
+    return TripModel.fromFirestore(document);
+  }
+
+  Future<TripModel> updateAvailableSeats({
+    required String tripId,
+    required int delta,
+  }) async {
+    final tripReference =
+        _tripsCollection.doc(tripId);
+
+    late TripModel updatedTrip;
+
+    await firestore.runTransaction(
+      (transaction) async {
+        final snapshot =
+            await transaction.get(tripReference);
+
+        if (!snapshot.exists) {
+          throw Exception(
+            'Le trajet est introuvable.',
+          );
+        }
+
+        final trip =
+            TripModel.fromFirestore(snapshot);
+
+        final newAvailableSeats =
+            trip.availableSeats + delta;
+
+        if (newAvailableSeats < 0) {
+          throw Exception(
+            'Pas assez de places disponibles.',
+          );
+        }
+
+        if (newAvailableSeats >
+            trip.totalSeats) {
+          throw Exception(
+            'Le nombre de places disponibles est invalide.',
+          );
+        }
+
+        transaction.update(
+          tripReference,
+          {
+            'availableSeats':
+                newAvailableSeats,
+          },
+        );
+
+        updatedTrip = trip.copyWith(
+          availableSeats:
+              newAvailableSeats,
+        ) as TripModel;
+      },
+    );
+
+    return updatedTrip;
+  }
+
+  Stream<List<TripModel>> getTripHistory({
+    required String driverId,
+  }) {
+    return _tripsCollection
+        .where(
+          'driverId',
+          isEqualTo: driverId,
+        )
+        .orderBy(
+          'departureDateTime',
+          descending: true,
+        )
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map(TripModel.fromFirestore)
+              .toList(),
+        );
   }
 }

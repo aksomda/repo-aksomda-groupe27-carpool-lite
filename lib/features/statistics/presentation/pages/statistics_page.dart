@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/di/injector.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../widgets/quick_stats_row.dart';
 import '../widgets/satisfaction_chart.dart';
 import '../widgets/statistic_card.dart';
@@ -31,7 +33,19 @@ class StatisticsPage extends StatelessWidget {
     final satisfactionPercentage = (overall / 10) * 100;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistiques CarPool Lite')),
+      drawer: AppDrawer(authProvider: Injector.authProvider),
+      appBar: AppBar(
+        title: const Text('Statistiques CarPool Lite'),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
+      ),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

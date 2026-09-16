@@ -1,276 +1,285 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../../../core/di/injector.dart';
 import '../../../navigation/presentation/widgets/app_drawer.dart';
-import '../../../bookings/domain/entities/ride_request_entity.dart';
-import '../../../bookings/presentation/providers/booking_provider.dart';
+import '../../../profile/domain/usecases/get_profile_usecase.dart';
 import '../../domain/entities/trip_entity.dart';
 import '../providers/trip_provider.dart';
 import '../widgets/trip_card.dart';
+import 'trip_detail_screen.dart';
 
-/// Recherche de trajets : liste l'ensemble des trajets enregistrés dans
-/// Firestore (tous conducteurs confondus), avec filtrage optionnel sur le
-/// lieu de départ et le lieu d'arrivée.
-///
-/// Nécessite un [TripProvider] fourni plus haut dans l'arbre (voir
-/// app_router.dart).
 class SearchTripsScreen extends StatefulWidget {
-  const SearchTripsScreen({super.key});
+  final TripProvider tripProvider;
+
+  const SearchTripsScreen({
+    super.key,
+    required this.tripProvider,
+  });
 
   @override
   State<SearchTripsScreen> createState() => _SearchTripsScreenState();
 }
 
 class _SearchTripsScreenState extends State<SearchTripsScreen> {
-  final _departController = TextEditingController();
-  final _arriveeController = TextEditingController();
+  final TextEditingController departureController =
+      TextEditingController();
+
+  final TextEditingController arrivalController =
+      TextEditingController();
+
+  DateTime? selectedDate;
+
+  final GetProfileUseCase _getProfileUseCase =
+      Injector.createProfileProvider().getProfileUseCase;
+
+  final Map<String, Future<String>> _driverNames = {};
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Au premier affichage, on liste tous les trajets sans filtre.
-      context.read<TripProvider>().searchTrips();
-    });
+
+    widget.tripProvider.addListener(_onProviderChanged);
+    widget.tripProvider.searchTrips();
+  }
+
+  void _onProviderChanged() {
+    if (!mounted) return;
+
+    setState(() {});
   }
 
   @override
   void dispose() {
-    _departController.dispose();
-    _arriveeController.dispose();
+    widget.tripProvider.removeListener(_onProviderChanged);
+    departureController.dispose();
+    arrivalController.dispose();
     super.dispose();
   }
 
-  void _applyFilters() {
-    FocusScope.of(context).unfocus();
-    context.read<TripProvider>().searchTrips(
-          lieuDepart: _departController.text,
-          lieuArrivee: _arriveeController.text,
-        );
+  Future<String> _driverName(String driverId) {
+    return _driverNames.putIfAbsent(driverId, () async {
+      try {
+        final profile = await _getProfileUseCase(driverId);
+        return profile.name;
+      } catch (_) {
+        return 'Conducteur';
+      }
+    });
   }
 
-  void _resetFilters() {
-    FocusScope.of(context).unfocus();
-    _departController.clear();
-    _arriveeController.clear();
-    context.read<TripProvider>().clearSearchFilters();
+  Future<void> _selectDate() async {
+    final now = DateTime.now();
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now,
+      lastDate: now.add(
+        const Duration(days: 90),
+      ),
+    );
+
+    if (pickedDate == null) {
+      return;
+    }
+
+    setState(() {
+      selectedDate = pickedDate;
+    });
   }
 
-  Future<void> _reserve(TripEntity trip) async {
-    final passengerId = Injector.authProvider.user?.uid ?? '';
-    if (passengerId.isEmpty) {
+  void _search() {
+    widget.tripProvider.searchTrips(
+      departure: departureController.text,
+      arrival: arrivalController.text,
+      date: selectedDate,
+    );
+  }
+
+  void _openTrip(TripEntity trip, String driverName) {
+    final user = Injector.authProvider.user;
+
+    if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vous devez être connecté pour réserver un trajet.')),
+        const SnackBar(
+          content: Text('Vous devez être connecté pour réserver un trajet.'),
+        ),
       );
       return;
     }
 
-    final placesController = TextEditingController(text: '1');
-    final formKey = GlobalKey<FormState>();
-
-    final nombrePlaces = await showDialog<int>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Réserver ce trajet'),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: placesController,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Nombre de places souhaitées',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                final n = int.tryParse((value ?? '').trim());
-                if (n == null || n <= 0) return 'Entrez un nombre de places valide';
-                return null;
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Annuler'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.of(dialogContext).pop(int.parse(placesController.text.trim()));
-                }
-              },
-              child: const Text('Envoyer la demande'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (nombrePlaces == null || !mounted) return;
-
-    final bookingProvider = context.read<BookingProvider>();
-    final success = await bookingProvider.requestBooking(
-      RideRequestEntity(
-        id: '',
-        tripId: trip.id,
-        driverId: trip.driverId,
-        passengerId: passengerId,
-        lieuDepart: trip.lieuDepart,
-        lieuArrivee: trip.lieuArrivee,
-        nombrePlaces: nombrePlaces,
-        statut: RideRequestStatus.enAttente,
-        dateDemande: DateTime.now(),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TripDetailScreen(
+          tripId: trip.id,
+          driverId: trip.driverId,
+          driverName: driverName,
+          departure: trip.departure,
+          arrival: trip.arrival,
+          date: _formatDate(trip.departureDateTime),
+          departureTime: _formatTime(trip.departureDateTime),
+          duration: '—',
+          availableSeats: trip.availableSeats,
+          price: trip.pricePerSeat,
+          rating: 0,
+          bookingProvider: Injector.createBookingProvider(),
+          passengerId: user.uid,
+        ),
       ),
     );
+  }
 
-    if (!mounted) return;
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Demande de réservation envoyée.')),
-      );
-    } else if (bookingProvider.saveError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(bookingProvider.saveError!)),
-      );
-    }
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
+
+  String _formatTime(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<TripProvider>();
-    final hasFilters =
-        provider.filtreDepart.isNotEmpty || provider.filtreArrivee.isNotEmpty;
+    final trips = widget.tripProvider.searchResults;
 
     return Scaffold(
-      drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Recherche de trajets')),
+      drawer: AppDrawer(authProvider: Injector.authProvider),
+      appBar: AppBar(
+        title: const Text('Rechercher un trajet'),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          // Zone de recherche
+          Container(
+            padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _departController,
-                        decoration: const InputDecoration(
-                          labelText: 'Lieu de départ',
-                          isDense: true,
-                          border: OutlineInputBorder(),
-                        ),
-                        textInputAction: TextInputAction.next,
-                        onSubmitted: (_) => _applyFilters(),
-                      ),
+                TextField(
+                  controller: departureController,
+                  decoration: const InputDecoration(
+                    labelText: 'Départ',
+                    prefixIcon: Icon(
+                      Icons.radio_button_checked,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _arriveeController,
-                        decoration: const InputDecoration(
-                          labelText: "Lieu d'arrivée",
-                          isDense: true,
-                          border: OutlineInputBorder(),
-                        ),
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: (_) => _applyFilters(),
-                      ),
-                    ),
-                  ],
+                    border: OutlineInputBorder(),
+                  ),
                 ),
+
                 const SizedBox(height: 12),
+
+                TextField(
+                  controller: arrivalController,
+                  decoration: const InputDecoration(
+                    labelText: 'Arrivée',
+                    prefixIcon: Icon(
+                      Icons.location_on,
+                    ),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
                 Row(
                   children: [
                     Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _applyFilters,
+                      child: OutlinedButton.icon(
+                        onPressed: _selectDate,
+                        icon: const Icon(
+                          Icons.calendar_today,
+                        ),
+                        label: Text(
+                          selectedDate == null
+                              ? 'Choisir une date'
+                              : _formatDate(selectedDate!),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _search,
                         icon: const Icon(Icons.search),
                         label: const Text('Rechercher'),
                       ),
                     ),
-                    if (hasFilters) ...[
-                      const SizedBox(width: 12),
-                      OutlinedButton.icon(
-                        onPressed: _resetFilters,
-                        icon: const Icon(Icons.clear),
-                        label: const Text('Effacer'),
-                      ),
-                    ],
                   ],
                 ),
               ],
             ),
           ),
+
           const Divider(height: 1),
-          Expanded(child: _buildResults(context, provider, hasFilters)),
+
+          if (widget.tripProvider.errorMessage != null && trips.isEmpty)
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    widget.tripProvider.errorMessage!,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            )
+          else
+            // Liste des trajets
+            Expanded(
+              child: trips.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Aucun trajet trouvé.',
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: trips.length,
+                      itemBuilder: (context, index) {
+                        final trip = trips[index];
+
+                        return FutureBuilder<String>(
+                          future: _driverName(trip.driverId),
+                          builder: (context, snapshot) {
+                            final driverName =
+                                snapshot.data ?? 'Conducteur';
+
+                            return TripCard(
+                              tripId: trip.id,
+                              driverName: driverName,
+                              departure: trip.departure,
+                              arrival: trip.arrival,
+                              departureTime:
+                                  _formatTime(trip.departureDateTime),
+                              duration: '—',
+                              availableSeats: trip.availableSeats,
+                              price: trip.pricePerSeat,
+                              rating: 0,
+                              date: _formatDate(trip.departureDateTime),
+                              onTap: () => _openTrip(trip, driverName),
+                            );
+                          },
+                        );
+                      },
+                    ),
+            ),
         ],
       ),
-    );
-  }
-
-  Widget _buildResults(BuildContext context, TripProvider provider, bool hasFilters) {
-    if (provider.isLoadingSearch) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (provider.searchErrorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Text(
-            provider.searchErrorMessage!,
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
-
-    final trips = provider.searchResults;
-
-    if (trips.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Text(
-            hasFilters
-                ? 'Aucun trajet ne correspond à votre recherche.'
-                : 'Aucun trajet enregistré pour le moment.',
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text(
-            '${trips.length} trajet${trips.length > 1 ? 's' : ''} trouvé'
-            '${trips.length > 1 ? 's' : ''}',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 16),
-            itemCount: trips.length,
-            itemBuilder: (context, index) {
-              final trip = trips[index];
-              final isOwnTrip = trip.driverId == (Injector.authProvider.user?.uid ?? '');
-              return TripCard(
-                trip: trip,
-                onReserve: isOwnTrip ? null : () => _reserve(trip),
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }

@@ -10,10 +10,12 @@ import '../di/injector.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/verify_student_screen.dart';
+import '../../features/universities/presentation/screens/university_selection_screen.dart';
 import '../../features/navigation/presentation/screens/app_dashboard_screen.dart';
 import '../../features/trips/presentation/screens/publish_trip_screen.dart';
 import '../../features/trips/presentation/screens/search_trips_screen.dart';
 import '../../features/trips/presentation/screens/trip_history_screen.dart';
+import '../../features/bookings/presentation/screens/my_bookings_screen.dart';
 import '../../features/bookings/presentation/screens/booking_requests_screen.dart';
 import '../../features/vehicles/presentation/screens/vehicle_list_screen.dart';
 import '../../features/reviews/presentation/screens/user_reviews_screen.dart';
@@ -27,44 +29,22 @@ import '../../features/ufrs/presentation/pages/ufr_list_page.dart';
 import '../../features/universities/presentation/pages/university_list_page.dart';
 import '../../features/user_management/presentation/screens/user_management_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
-
-/// Seules routes accessibles sans être connecté.
-///
-/// `/auth/verify-student` en fait partie mais reste atteignable une fois
-/// connecté : c'est l'étape qui suit immédiatement l'inscription.
-const Set<String> _publicRoutes = {
-  '/auth',
-  '/auth/register',
-  '/auth/verify-student',
-};
+import '../../features/bookings/presentation/providers/booking_provider.dart';
+import '../../features/profile/presentation/screens/preferences_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/auth',
-  // Sans `refreshListenable`, GoRouter n'évalue `redirect` qu'au moment
-  // d'une navigation : une connexion ou une déconnexion ne provoquait
-  // aucune réévaluation, et l'utilisateur restait sur un écran auquel il
-  // n'avait plus (ou pas encore) droit.
-  refreshListenable: Injector.authProvider,
   redirect: (_, state) {
     final location = state.matchedLocation;
     final user = Injector.authProvider.user;
     final isAdmin = (user?.role ?? 'student').toLowerCase() == 'admin';
 
-    // Utilisateur non connecté : tout ce qui n'est pas public est refusé.
-    // Auparavant seules les routes /admin étaient protégées ; les écrans
-    // métier s'ouvraient donc avec un uid vide — d'où des listes
-    // systématiquement vides — ou plantaient sur un `user!`.
-    if (user == null) {
-      return _publicRoutes.contains(location) ? null : '/auth';
+    final isAdminRoute = location.startsWith('/admin');
+    if (isAdminRoute) {
+      if (user == null) return '/auth';
+      if (!isAdmin) return '/home';
+      return null;
     }
-
-    // Déjà connecté : l'écran de connexion n'a plus de raison d'être.
-    if (location == '/auth') {
-      return isAdmin ? '/admin/dashboard' : '/home';
-    }
-
-    // Espace d'administration réservé au rôle "admin".
-    if (location.startsWith('/admin') && !isAdmin) return '/home';
 
     // Un administrateur qui atterrit sur l'accueil étudiant (ex. juste
     // après connexion) est redirigé vers son propre tableau de bord.
@@ -102,62 +82,81 @@ final GoRouter appRouter = GoRouter(
         profileProvider: Injector.createProfileProvider(),
       ),
     ),
+    GoRoute(path: '/preferences', builder: (_, _) => const PreferencesScreen()),
+
+    GoRoute(
+      path: '/universities',
+      builder: (_, _) => ChangeNotifierProvider(
+        create: (_) => Injector.createUniversityProvider(),
+        child: const UniversitySelectionScreen(),
+      ),
+    ),
 
     GoRoute(
       path: '/trips/publish',
-      builder: (_, _) => MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => Injector.createTripProvider()),
-          ChangeNotifierProvider(create: (_) => Injector.createVehicleProvider()),
-        ],
-        child: const PublishTripScreen(),
+      builder: (_, _) => PublishTripScreen(
+        tripProvider: Injector.createTripProvider(),
       ),
     ),
     GoRoute(
       path: '/trips/search',
-      builder: (_, _) => MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => Injector.createTripProvider()),
-          ChangeNotifierProvider(create: (_) => Injector.createBookingProvider()),
-        ],
-        child: const SearchTripsScreen(),
+      builder: (_, _) => SearchTripsScreen(
+        tripProvider: Injector.createTripProvider(),
       ),
     ),
     GoRoute(
       path: '/trips/history',
-      builder: (_, _) => MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => Injector.createTripProvider()),
-          ChangeNotifierProvider(create: (_) => Injector.createVehicleProvider()),
-        ],
-        child: const TripHistoryScreen(),
-      ),
+      builder: (_, _) => const TripHistoryScreen(),
     ),
     GoRoute(
       path: '/trips',
-      builder: (_, _) => MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => Injector.createTripProvider()),
-          ChangeNotifierProvider(create: (_) => Injector.createBookingProvider()),
-        ],
-        child: const SearchTripsScreen(),
+      builder: (_, _) => SearchTripsScreen(
+        tripProvider: Injector.createTripProvider(),
       ),
     ),
 
     GoRoute(
       path: '/bookings',
-      builder: (_, _) => ChangeNotifierProvider(
-        create: (_) => Injector.createBookingProvider(),
-        child: const BookingRequestsScreen(),
-      ),
+      builder: (_, _) {
+        final user = Injector.authProvider.user;
+
+        if (user == null) {
+          return const Scaffold(
+            body: Center(child: Text('Utilisateur non connecté')),
+          );
+        }
+
+        return ChangeNotifierProvider(
+          create: (_) => Injector.createBookingProvider(),
+          child: Builder(
+            builder: (context) {
+              return MyBookingsScreen(
+                bookingProvider: context.read<BookingProvider>(),
+                passengerId: user.uid,
+              );
+            },
+          ),
+        );
+      },
     ),
     GoRoute(
-      path: '/vehicles',
-      builder: (_, _) => ChangeNotifierProvider(
-        create: (_) => Injector.createVehicleProvider(),
-        child: const VehicleListScreen(),
-      ),
+      path: '/bookings/requests',
+      builder: (_, _) {
+        final user = Injector.authProvider.user;
+
+        if (user == null) {
+          return const Scaffold(
+            body: Center(child: Text('Utilisateur non connecté')),
+          );
+        }
+
+        return BookingRequestsScreen(
+          bookingProvider: Injector.createBookingProvider(),
+          driverId: user.uid,
+        );
+      },
     ),
+    GoRoute(path: '/vehicles', builder: (_, _) => const VehicleListScreen()),
     GoRoute(
       path: '/chat',
       builder: (_, _) => ProviderScope(
@@ -166,12 +165,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/notifications',
-      // L'identifiant était codé en dur à la chaîne vide : la sous-collection
-      // interrogée était `users//notifications`, donc l'écran restait
-      // désespérément vide.
-      builder: (_, _) => NotificationsScreen(
-        userId: Injector.authProvider.user?.uid ?? '',
-      ),
+      builder: (_, _) => const NotificationsScreen(userId: ''),
     ),
     GoRoute(
       path: '/reviews',

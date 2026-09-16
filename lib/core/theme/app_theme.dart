@@ -17,6 +17,8 @@ class AppColors {
   static const Color quickGreen = Color(0xFFEAFBF8);
   static const Color quickYellow = Color(0xFFFFF7E2);
   static const Color quickPurple = Color(0xFFF1EDFF);
+  static const Color accentPurple = Color(0xFF7C4DFF);
+  static const Color success = Color(0xFF2E7D32);
 }
 
 class AppTheme {

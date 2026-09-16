@@ -1,100 +1,291 @@
-// Carte d'affichage d'une demande de réservation.
 import 'package:flutter/material.dart';
 
+import '../../domain/entities/booking_entity.dart';
 import '../../domain/entities/ride_request_entity.dart';
 
 class BookingCard extends StatelessWidget {
-  final RideRequestEntity request;
+  final String title;
+  final String subtitle;
+  final int numberOfSeats;
+  final double totalPrice;
+  final BookingStatus status;
+  final DateTime date;
 
-  /// Affichés uniquement si la demande est encore "en attente".
-  final VoidCallback? onAccept;
+  final VoidCallback? onConfirm;
   final VoidCallback? onReject;
   final VoidCallback? onCancel;
 
   const BookingCard({
     super.key,
-    required this.request,
-    this.onAccept,
+    required this.title,
+    required this.subtitle,
+    required this.numberOfSeats,
+    required this.totalPrice,
+    required this.status,
+    required this.date,
+    this.onConfirm,
     this.onReject,
     this.onCancel,
   });
 
-  Color _statutColor(BuildContext context) {
-    switch (request.statut) {
-      case RideRequestStatus.enAttente:
-        return Colors.orange;
-      case RideRequestStatus.acceptee:
-        return Colors.green;
-      case RideRequestStatus.refusee:
-        return Theme.of(context).colorScheme.error;
-      case RideRequestStatus.annulee:
-        return Colors.grey;
-    }
+  factory BookingCard.fromBooking({
+    Key? key,
+    required BookingEntity booking,
+    VoidCallback? onCancel,
+  }) {
+    return BookingCard(
+      key: key,
+      title: 'Réservation',
+      subtitle: 'Trajet : ${booking.tripId}',
+      numberOfSeats: booking.numberOfSeats,
+      totalPrice: booking.totalPrice,
+      status: booking.status,
+      date: booking.reservationDate,
+      onCancel: onCancel,
+    );
   }
 
-  String _formatDate(DateTime date) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(date.day)}/${two(date.month)}/${date.year} à ${two(date.hour)}:${two(date.minute)}';
+  factory BookingCard.fromRequest({
+    Key? key,
+    required RideRequestEntity request,
+    VoidCallback? onConfirm,
+    VoidCallback? onReject,
+  }) {
+    return BookingCard(
+      key: key,
+      title: 'Demande de réservation',
+      subtitle: 'Passager : ${request.passengerId}',
+      numberOfSeats: request.numberOfSeats,
+      totalPrice: request.totalPrice,
+      status: request.status,
+      date: request.createdAt,
+      onConfirm: onConfirm,
+      onReject: onReject,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isPending = request.statut == RideRequestStatus.enAttente;
-    final color = _statutColor(context);
-
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    '${request.lieuDepart} → ${request.lieuArrivee}',
-                    style: Theme.of(context).textTheme.titleSmall,
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primary.withValues(
+                            alpha: 0.12,
+                          ),
+                  child: Icon(
+                    Icons.directions_car,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    request.statut.label,
-                    style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12),
+                ),
+                _StatusBadge(status: status),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _InfoItem(
+                    icon: Icons.event_seat,
+                    label: 'Places',
+                    value: '$numberOfSeats',
+                  ),
+                ),
+                Expanded(
+                  child: _InfoItem(
+                    icon: Icons.payments_outlined,
+                    label: 'Prix',
+                    value: '${totalPrice.toStringAsFixed(0)} GNF',
+                  ),
+                ),
+                Expanded(
+                  child: _InfoItem(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Date',
+                    value: _formatDate(date),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              '${request.nombrePlaces} place(s) demandée(s) · '
-              'Demande du ${_formatDate(request.dateDemande)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (isPending && (onAccept != null || onReject != null || onCancel != null)) ...[
-              const SizedBox(height: 8),
+
+            if (onConfirm != null ||
+                onReject != null ||
+                onCancel != null) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   if (onReject != null)
-                    TextButton(onPressed: onReject, child: const Text('Refuser')),
-                  if (onAccept != null) ...[
+                    OutlinedButton(
+                      onPressed: onReject,
+                      child: const Text('Refuser'),
+                    ),
+                  if (onReject != null && onConfirm != null)
                     const SizedBox(width: 8),
-                    FilledButton(onPressed: onAccept, child: const Text('Accepter')),
-                  ],
+                  if (onConfirm != null)
+                    ElevatedButton(
+                      onPressed: onConfirm,
+                      child: const Text('Accepter'),
+                    ),
                   if (onCancel != null)
-                    TextButton(onPressed: onCancel, child: const Text('Annuler la demande')),
+                    OutlinedButton(
+                      onPressed: onCancel,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                      ),
+                      child: const Text('Annuler'),
+                    ),
                 ],
               ),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  static String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+
+    return '$day/$month/$year';
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final BookingStatus status;
+
+  const _StatusBadge({
+    required this.status,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    late String label;
+    late Color color;
+
+    switch (status) {
+      case BookingStatus.pending:
+        label = 'En attente';
+        color = Colors.orange;
+        break;
+
+      case BookingStatus.confirmed:
+        label = 'Confirmée';
+        color = Colors.green;
+        break;
+
+      case BookingStatus.cancelled:
+        label = 'Annulée';
+        color = Colors.red;
+        break;
+
+      case BookingStatus.completed:
+        label = 'Terminée';
+        color = Colors.blue;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey.shade600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

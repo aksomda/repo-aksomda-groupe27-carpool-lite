@@ -185,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Icons.inbox_rounded,
                           label: 'Demandes de\nréservation',
                           color: AppColors.quickGreen,
-                          onTap: () => context.go('/bookings'),
+                          onTap: () => context.go('/bookings/requests'),
                         ),
                         QuickAccessItem(
                           icon: Icons.history_rounded,

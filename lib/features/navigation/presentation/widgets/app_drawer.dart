@@ -222,8 +222,15 @@ class AppDrawer extends StatelessWidget {
 
                   _menuItem(
                     context,
-                    icon: Icons.event_seat,
+                    icon: Icons.inbox_outlined,
                     label: 'Demandes de réservation',
+                    route: '/bookings/requests',
+                  ),
+
+                  _menuItem(
+                    context,
+                    icon: Icons.event_seat,
+                    label: 'Mes réservations',
                     route: '/bookings',
                   ),
 

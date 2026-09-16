@@ -1,235 +1,267 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../../../core/di/injector.dart';
-import '../../../navigation/presentation/widgets/app_drawer.dart';
-import '../../domain/entities/ride_request_entity.dart';
+import '../../domain/entities/booking_entity.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/booking_card.dart';
-import 'my_bookings_screen.dart';
 
-/// Liste des demandes de réservation reçues par le conducteur connecté,
-/// filtrable par statut de la demande et par plage de dates (date à
-/// laquelle la demande a été envoyée).
-///
-/// Nécessite un [BookingProvider] fourni plus haut dans l'arbre (voir
-/// app_router.dart).
 class BookingRequestsScreen extends StatefulWidget {
-  const BookingRequestsScreen({super.key});
+  final BookingProvider bookingProvider;
+  final String driverId;
+
+  const BookingRequestsScreen({
+    super.key,
+    required this.bookingProvider,
+    required this.driverId,
+  });
 
   @override
-  State<BookingRequestsScreen> createState() => _BookingRequestsScreenState();
+  State<BookingRequestsScreen> createState() =>
+      _BookingRequestsScreenState();
 }
 
-class _BookingRequestsScreenState extends State<BookingRequestsScreen> {
+class _BookingRequestsScreenState
+    extends State<BookingRequestsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final driverId = Injector.authProvider.user?.uid ?? '';
-      context.read<BookingProvider>().listenToDriverRequests(driverId);
-    });
-  }
 
-  String _formatDate(DateTime date) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(date.day)}/${two(date.month)}/${date.year}';
-  }
-
-  Future<void> _pickDateDebut(BuildContext context, BookingProvider provider) async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: provider.dateDebutFiltre ?? now,
-      firstDate: DateTime(now.year - 2),
-      lastDate: DateTime(now.year + 2),
+    widget.bookingProvider.listenToDriverRequests(
+      driverId: widget.driverId,
     );
-    if (picked != null) {
-      provider.setDateRangeFiltre(
-        dateDebut: picked,
-        dateFin: provider.dateFinFiltre,
-      );
-    }
+
+    widget.bookingProvider.addListener(_onProviderChanged);
   }
 
-  Future<void> _pickDateFin(BuildContext context, BookingProvider provider) async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: provider.dateFinFiltre ?? now,
-      firstDate: DateTime(now.year - 2),
-      lastDate: DateTime(now.year + 2),
-    );
-    if (picked != null) {
-      provider.setDateRangeFiltre(
-        dateDebut: provider.dateDebutFiltre,
-        dateFin: picked,
-      );
-    }
+  void _onProviderChanged() {
+    if (!mounted) return;
+
+    setState(() {});
   }
 
-  Future<void> _confirmAndRun(
-    BuildContext context,
-    BookingProvider provider,
-    Future<bool> Function() action,
-    String successMessage,
-  ) async {
-    final success = await action();
-    if (!context.mounted) return;
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(successMessage)));
-    } else if (provider.saveError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.saveError!)));
-    }
+  @override
+  void dispose() {
+    widget.bookingProvider.removeListener(_onProviderChanged);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<BookingProvider>();
-    final hasFiltres = provider.statutFiltre != null ||
-        provider.dateDebutFiltre != null ||
-        provider.dateFinFiltre != null;
+    final provider = widget.bookingProvider;
 
     return Scaffold(
-      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Demandes de réservation'),
-        actions: [
-          IconButton(
-            tooltip: 'Mes demandes envoyées',
-            icon: const Icon(Icons.send_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => ChangeNotifierProvider.value(
-                  value: provider,
-                  child: const MyBookingsScreen(),
-                ),
-              ),
-            ),
-          ),
-        ],
+        centerTitle: true,
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Column(
-              children: [
-                DropdownButtonFormField<RideRequestStatus?>(
-                  initialValue: provider.statutFiltre,
-                  decoration: const InputDecoration(
-                    labelText: 'Statut de la demande',
-                    isDense: true,
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('Tous les statuts')),
-                    ...RideRequestStatus.values.map(
-                      (s) => DropdownMenuItem(value: s, child: Text(s.label)),
-                    ),
-                  ],
-                  onChanged: (value) => provider.setStatutFiltre(value),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _pickDateDebut(context, provider),
-                        icon: const Icon(Icons.event, size: 18),
-                        label: Text(
-                          provider.dateDebutFiltre == null
-                              ? 'Date de début'
-                              : _formatDate(provider.dateDebutFiltre!),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _pickDateFin(context, provider),
-                        icon: const Icon(Icons.event, size: 18),
-                        label: Text(
-                          provider.dateFinFiltre == null
-                              ? 'Date de fin'
-                              : _formatDate(provider.dateFinFiltre!),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (hasFiltres) ...[
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: provider.clearFiltres,
-                      icon: const Icon(Icons.clear, size: 18),
-                      label: const Text('Effacer les filtres'),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(child: _buildList(context, provider, hasFiltres)),
-        ],
+      body: _buildBody(provider),
+    );
+  }
+
+  Widget _buildBody(BookingProvider provider) {
+    if (provider.errorMessage != null &&
+        provider.driverRequests.isEmpty) {
+      return _ErrorView(
+        message: provider.errorMessage!,
+        onRetry: () {
+          provider.listenToDriverRequests(
+            driverId: widget.driverId,
+          );
+        },
+      );
+    }
+
+    if (provider.driverRequests.isEmpty) {
+      return const _EmptyRequestsView();
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        provider.listenToDriverRequests(
+          driverId: widget.driverId,
+        );
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: provider.driverRequests.length,
+        itemBuilder: (context, index) {
+          final request = provider.driverRequests[index];
+
+          return BookingCard.fromRequest(
+            request: request,
+            onConfirm: request.status == BookingStatus.pending
+                ? () => _confirmRequest(request.id)
+                : null,
+            onReject: request.status == BookingStatus.pending
+                ? () => _rejectRequest(request.id)
+                : null,
+          );
+        },
       ),
     );
   }
 
-  Widget _buildList(BuildContext context, BookingProvider provider, bool hasFiltres) {
-    if (provider.isLoadingDriverRequests) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (provider.driverRequestsError != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Text(provider.driverRequestsError!, textAlign: TextAlign.center),
-        ),
-      );
-    }
-
-    final requests = provider.filteredDriverRequests;
-
-    if (requests.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Text(
-            hasFiltres
-                ? 'Aucune demande ne correspond à ces filtres.'
-                : 'Aucune demande de réservation reçue pour le moment.',
-            textAlign: TextAlign.center,
+  Future<void> _confirmRequest(String requestId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirmer la réservation ?'),
+          content: const Text(
+            'Voulez-vous accepter cette demande de réservation ?',
           ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: 8, bottom: 16),
-      itemCount: requests.length,
-      itemBuilder: (context, index) {
-        final request = requests[index];
-        return BookingCard(
-          request: request,
-          onAccept: () => _confirmAndRun(
-            context,
-            provider,
-            () => provider.confirmRequest(request.id),
-            'Demande acceptée.',
-          ),
-          onReject: () => _confirmAndRun(
-            context,
-            provider,
-            () => provider.rejectRequest(request.id),
-            'Demande refusée.',
-          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Non'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Accepter'),
+            ),
+          ],
         );
       },
+    );
+
+    if (confirmed != true) return;
+
+    await widget.bookingProvider.confirmBooking(
+      requestId: requestId,
+    );
+
+    if (!mounted) return;
+
+    final message = widget.bookingProvider.errorMessage ??
+        widget.bookingProvider.successMessage;
+
+    if (message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+        ),
+      );
+    }
+  }
+
+  Future<void> _rejectRequest(String requestId) async {
+    final rejected = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Refuser la demande ?'),
+          content: const Text(
+            'Voulez-vous vraiment refuser cette demande ? '
+            'La place sera remise à disposition.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Non'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Refuser'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (rejected != true) return;
+
+    await widget.bookingProvider.rejectBookingRequest(
+      requestId: requestId,
+    );
+
+    if (!mounted) return;
+
+    final message = widget.bookingProvider.errorMessage ??
+        widget.bookingProvider.successMessage;
+
+    if (message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+        ),
+      );
+    }
+  }
+}
+
+class _EmptyRequestsView extends StatelessWidget {
+  const _EmptyRequestsView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 80,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Aucune demande',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Vous n’avez aucune demande de réservation pour le moment.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorView({
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: onRetry,
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

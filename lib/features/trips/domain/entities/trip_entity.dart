@@ -1,55 +1,82 @@
-/// Entité Trip : trajet publié par un conducteur (utilisateur connecté).
-class TripEntity {
-  /// id_trajet : identifiant Firestore généré automatiquement.
-  final String id;
+enum TripStatus {
+  active,
+  completed,
+  cancelled,
+}
 
-  /// uid du conducteur qui a publié le trajet.
+class TripEntity {
+  final String id;
   final String driverId;
 
-  /// Immatriculation du véhicule utilisé pour ce trajet.
-  final String immatriculationVehicule;
+  final String departure;
+  final String arrival;
 
-  final String lieuDepart;
-  final String lieuArrivee;
+  // Coordonnées Google Maps
+  final double departureLatitude;
+  final double departureLongitude;
+  final double arrivalLatitude;
+  final double arrivalLongitude;
 
-  /// Distance en kilomètres, calculée par le système via l'API Google
-  /// (Distance Matrix) à partir du lieu de départ et du lieu d'arrivée.
-  final double distanceKm;
-
-  /// Prix par place (place réservée par un passager).
-  final num prixParPlace;
-
+  final DateTime departureDateTime;
+  final double pricePerSeat;
+  final int totalSeats;
+  final int availableSeats;
+  final TripStatus status;
   final DateTime createdAt;
 
   const TripEntity({
     required this.id,
     required this.driverId,
-    required this.immatriculationVehicule,
-    required this.lieuDepart,
-    required this.lieuArrivee,
-    required this.distanceKm,
-    required this.prixParPlace,
+    required this.departure,
+    required this.arrival,
+    required this.departureLatitude,
+    required this.departureLongitude,
+    required this.arrivalLatitude,
+    required this.arrivalLongitude,
+    required this.departureDateTime,
+    required this.pricePerSeat,
+    required this.totalSeats,
+    required this.availableSeats,
+    required this.status,
     required this.createdAt,
   });
 
   TripEntity copyWith({
     String? id,
     String? driverId,
-    String? immatriculationVehicule,
-    String? lieuDepart,
-    String? lieuArrivee,
-    double? distanceKm,
-    num? prixParPlace,
+    String? departure,
+    String? arrival,
+    double? departureLatitude,
+    double? departureLongitude,
+    double? arrivalLatitude,
+    double? arrivalLongitude,
+    DateTime? departureDateTime,
+    double? pricePerSeat,
+    int? totalSeats,
+    int? availableSeats,
+    TripStatus? status,
     DateTime? createdAt,
   }) {
     return TripEntity(
       id: id ?? this.id,
       driverId: driverId ?? this.driverId,
-      immatriculationVehicule: immatriculationVehicule ?? this.immatriculationVehicule,
-      lieuDepart: lieuDepart ?? this.lieuDepart,
-      lieuArrivee: lieuArrivee ?? this.lieuArrivee,
-      distanceKm: distanceKm ?? this.distanceKm,
-      prixParPlace: prixParPlace ?? this.prixParPlace,
+      departure: departure ?? this.departure,
+      arrival: arrival ?? this.arrival,
+      departureLatitude:
+          departureLatitude ?? this.departureLatitude,
+      departureLongitude:
+          departureLongitude ?? this.departureLongitude,
+      arrivalLatitude:
+          arrivalLatitude ?? this.arrivalLatitude,
+      arrivalLongitude:
+          arrivalLongitude ?? this.arrivalLongitude,
+      departureDateTime:
+          departureDateTime ?? this.departureDateTime,
+      pricePerSeat: pricePerSeat ?? this.pricePerSeat,
+      totalSeats: totalSeats ?? this.totalSeats,
+      availableSeats:
+          availableSeats ?? this.availableSeats,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
     );
   }

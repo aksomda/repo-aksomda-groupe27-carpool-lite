@@ -1,4 +1,3 @@
-// Cas d'usage : publication d'un nouveau trajet (fonctionnalité 04).
 import '../entities/trip_entity.dart';
 import '../repositories/trip_repository.dart';
 
@@ -7,26 +6,29 @@ class PublishTripUseCase {
 
   PublishTripUseCase(this.repository);
 
-  Future<TripEntity> call(TripEntity trip) {
-    _validate(trip);
-    return repository.publishTrip(trip);
-  }
-
-  void _validate(TripEntity trip) {
-    if (trip.immatriculationVehicule.trim().isEmpty) {
-      throw Exception('Sélectionnez le véhicule utilisé pour ce trajet.');
-    }
-    if (trip.lieuDepart.trim().isEmpty) {
-      throw Exception('Le lieu de départ est requis.');
-    }
-    if (trip.lieuArrivee.trim().isEmpty) {
-      throw Exception("Le lieu d'arrivée est requis.");
-    }
-    if (trip.distanceKm <= 0) {
-      throw Exception('La distance du trajet doit être calculée avant l\'enregistrement.');
-    }
-    if (trip.prixParPlace <= 0) {
-      throw Exception('Le prix par place doit être supérieur à 0.');
-    }
+  Future<TripEntity> call({
+    required String driverId,
+    required String departure,
+    required String arrival,
+    required double departureLatitude,
+    required double departureLongitude,
+    required double arrivalLatitude,
+    required double arrivalLongitude,
+    required DateTime departureDateTime,
+    required double pricePerSeat,
+    required int totalSeats,
+  }) {
+    return repository.publishTrip(
+      driverId: driverId,
+      departure: departure,
+      arrival: arrival,
+      departureLatitude: departureLatitude,
+      departureLongitude: departureLongitude,
+      arrivalLatitude: arrivalLatitude,
+      arrivalLongitude: arrivalLongitude,
+      departureDateTime: departureDateTime,
+      pricePerSeat: pricePerSeat,
+      totalSeats: totalSeats,
+    );
   }
 }

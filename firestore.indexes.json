@@ -4,24 +4,32 @@
       "collectionGroup": "trips",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "departureDateTime", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "trips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "driverId", "order": "ASCENDING" },
+        { "fieldPath": "departureDateTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "rideRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "driverId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "rideRequests",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "driverId", "order": "ASCENDING" },
-        { "fieldPath": "dateDemande", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "rideRequests",
-      "queryScope": "COLLECTION",
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "passengerId", "order": "ASCENDING" },
-        { "fieldPath": "dateDemande", "order": "DESCENDING" }
+        { "fieldPath": "reservationDate", "order": "DESCENDING" }
       ]
     }
   ],

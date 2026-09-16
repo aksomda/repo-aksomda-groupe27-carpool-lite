@@ -1,5 +1,4 @@
-// Cas d'usage : acceptation d'une demande de réservation par le conducteur.
-import '../entities/ride_request_entity.dart';
+import '../entities/booking_entity.dart';
 import '../repositories/booking_repository.dart';
 
 class ConfirmBookingUseCase {
@@ -7,7 +6,11 @@ class ConfirmBookingUseCase {
 
   ConfirmBookingUseCase(this.repository);
 
-  Future<void> call(String requestId) {
-    return repository.updateStatus(requestId, RideRequestStatus.acceptee);
+  Future<BookingEntity> call({
+    required String requestId,
+  }) {
+    return repository.confirmBooking(
+      requestId: requestId,
+    );
   }
 }

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../navigation/presentation/widgets/app_drawer.dart';
 // import '../../../navigation/presentation/widgets/bottom_navigation.dart'; // masqué temporairement
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../../domain/entities/message.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/conversationcard.dart';
@@ -28,10 +28,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
 
   @override
   void initState() {
-    // `user!` plantait l'écran dès que la session n'était pas (encore)
-    // restaurée. Le routeur protège désormais cette route, mais on reste
-    // défensif : un `null` se traduit par une liste vide, pas par un crash.
-    currentUser = widget.authProvider.user;
+    currentUser = widget.authProvider.user!;
     super.initState();
   }
 
@@ -68,19 +65,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (currentUser == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text('Vous devez être connecté pour accéder à la messagerie.'),
-        ),
-      );
-    }
-
     final messagesAsync = ref.watch(userMessagesProvider(currentUser!.uid));
 
     return Scaffold(
-      drawer: const AppDrawer(),
       backgroundColor: const Color(0xFFF8FBFF),
+      drawer: AppDrawer(authProvider: widget.authProvider),
 
       body: SafeArea(
         child: Column(
@@ -89,23 +78,23 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             // HEADER
             // =================================================
             Padding(
-              padding: const EdgeInsets.fromLTRB(28, 15, 20, 0),
+              padding: const EdgeInsets.fromLTRB(8, 15, 20, 0),
               child: Row(
                 children: [
                   Builder(
                     builder: (context) => IconButton(
+                      tooltip: 'Menu',
                       icon: const Icon(
                         Icons.menu_rounded,
                         color: Color(0xFF123B7A),
-                        size: 28,
                       ),
-                      tooltip: 'Menu de navigation',
                       onPressed: () => Scaffold.of(context).openDrawer(),
                     ),
                   ),
+
                   Image.asset(
                     'assets/images/CarPoolLite_logo_sn.png',
-                    width: 155,
+                    width: 130,
                   ),
 
                   const Spacer(),

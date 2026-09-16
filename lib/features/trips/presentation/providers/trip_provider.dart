@@ -1,218 +1,169 @@
-// Gestion d'état des trajets (publication, modification, historique).
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/network/maps_api_client.dart';
 import '../../domain/entities/trip_entity.dart';
 import '../../domain/usecases/get_trip_history_usecase.dart';
 import '../../domain/usecases/publish_trip_usecase.dart';
 import '../../domain/usecases/search_trips_usecase.dart';
-import '../../domain/usecases/update_trip_usecase.dart';
+import '../../domain/usecases/update_available_seats_usecase.dart';
 
 class TripProvider extends ChangeNotifier {
   final PublishTripUseCase publishTripUseCase;
-  final UpdateTripUseCase updateTripUseCase;
-  final GetTripHistoryUseCase getTripHistoryUseCase;
   final SearchTripsUseCase searchTripsUseCase;
-  final MapsApiClient mapsApiClient;
+  final GetTripHistoryUseCase getTripHistoryUseCase;
+  final UpdateAvailableSeatsUseCase updateAvailableSeatsUseCase;
 
   TripProvider({
     required this.publishTripUseCase,
-    required this.updateTripUseCase,
-    required this.getTripHistoryUseCase,
     required this.searchTripsUseCase,
-    required this.mapsApiClient,
+    required this.getTripHistoryUseCase,
+    required this.updateAvailableSeatsUseCase,
   });
 
-  List<TripEntity> tripHistory = [];
-  bool isLoadingHistory = true;
-  String? historyError;
+  bool _isPublishing = false;
+  String? _errorMessage;
+  String? _successMessage;
 
-  /// Résultats du module de recherche (tous conducteurs confondus).
-  List<TripEntity> searchResults = [];
-  bool isLoadingSearch = true;
-  String? searchErrorMessage;
-
-  String _filtreDepart = '';
-  String _filtreArrivee = '';
-
-  String get filtreDepart => _filtreDepart;
-  String get filtreArrivee => _filtreArrivee;
-
-  bool isSaving = false;
-  String? saveError;
-
-  /// Dernière distance calculée (affichée à l'utilisateur avant
-  /// enregistrement du trajet).
-  DistanceResult? lastDistance;
-
-  StreamSubscription<List<TripEntity>>? _subscription;
-  String? _driverId;
+  List<TripEntity> _searchResults = [];
+  List<TripEntity> _tripHistory = [];
 
   StreamSubscription<List<TripEntity>>? _searchSubscription;
+  StreamSubscription<List<TripEntity>>? _historySubscription;
 
-  /// (Ré)abonne le provider à l'historique des trajets du conducteur
-  /// connecté. Sans effet si déjà abonné pour le même [driverId].
-  void listenToTripHistory(String driverId) {
-    if (_driverId == driverId && _subscription != null) return;
+  bool get isPublishing => _isPublishing;
 
-    _driverId = driverId;
-    _subscription?.cancel();
-    isLoadingHistory = true;
+  String? get errorMessage => _errorMessage;
+
+  String? get successMessage => _successMessage;
+
+  List<TripEntity> get searchResults => _searchResults;
+
+  List<TripEntity> get tripHistory => _tripHistory;
+
+  // ============================================================
+  // PUBLICATION D'UN TRAJET
+  // ============================================================
+
+  Future<TripEntity?> publishTrip({
+    required String driverId,
+    required String departure,
+    required String arrival,
+    required double departureLatitude,
+    required double departureLongitude,
+    required double arrivalLatitude,
+    required double arrivalLongitude,
+    required DateTime departureDateTime,
+    required double pricePerSeat,
+    required int totalSeats,
+  }) async {
+    _isPublishing = true;
+    _clearMessages();
     notifyListeners();
 
-    _subscription = getTripHistoryUseCase(driverId).listen(
-      (data) {
-        tripHistory = data;
-        isLoadingHistory = false;
-        historyError = null;
-        notifyListeners();
-      },
-      onError: (e) {
-        historyError = "Impossible de charger l'historique des trajets : $e";
-        isLoadingHistory = false;
-        notifyListeners();
-      },
-    );
+    try {
+      final trip = await publishTripUseCase(
+        driverId: driverId,
+        departure: departure,
+        arrival: arrival,
+        departureLatitude: departureLatitude,
+        departureLongitude: departureLongitude,
+        arrivalLatitude: arrivalLatitude,
+        arrivalLongitude: arrivalLongitude,
+        departureDateTime: departureDateTime,
+        pricePerSeat: pricePerSeat,
+        totalSeats: totalSeats,
+      );
+
+      _successMessage = 'Trajet publié avec succès.';
+
+      return trip;
+    } catch (e) {
+      _errorMessage = _cleanError(e);
+
+      return null;
+    } finally {
+      _isPublishing = false;
+      notifyListeners();
+    }
   }
 
-  /// (Ré)abonne le provider à l'ensemble des trajets enregistrés, filtrés
-  /// sur le lieu de départ et/ou le lieu d'arrivée. Appelé au premier
-  /// affichage de l'écran de recherche, puis à chaque changement de
-  /// filtre.
-  void searchTrips({String? lieuDepart, String? lieuArrivee}) {
-    _filtreDepart = (lieuDepart ?? '').trim();
-    _filtreArrivee = (lieuArrivee ?? '').trim();
+  // ============================================================
+  // RECHERCHE DE TRAJETS
+  // ============================================================
 
+  void searchTrips({
+    String? departure,
+    String? arrival,
+    DateTime? date,
+  }) {
     _searchSubscription?.cancel();
-    isLoadingSearch = true;
-    notifyListeners();
 
     _searchSubscription = searchTripsUseCase(
-      lieuDepart: _filtreDepart,
-      lieuArrivee: _filtreArrivee,
+      departure: departure,
+      arrival: arrival,
+      date: date,
     ).listen(
-      (data) {
-        searchResults = data;
-        isLoadingSearch = false;
-        searchErrorMessage = null;
+      (trips) {
+        _searchResults = trips;
+        _errorMessage = null;
         notifyListeners();
       },
-      onError: (e) {
-        searchErrorMessage = 'Impossible de charger les trajets : $e';
-        isLoadingSearch = false;
+      onError: (error) {
+        _errorMessage = _cleanError(error);
         notifyListeners();
       },
     );
   }
 
-  /// Réinitialise les filtres et réaffiche tous les trajets.
-  void clearSearchFilters() => searchTrips();
+  // ============================================================
+  // HISTORIQUE DES TRAJETS D'UN CONDUCTEUR
+  // ============================================================
 
-  /// Calcule la distance entre [lieuDepart] et [lieuArrivee] via l'API
-  /// Google (Distance Matrix).
-  Future<DistanceResult> calculateDistance({
-    required String lieuDepart,
-    required String lieuArrivee,
-  }) async {
-    final result = await mapsApiClient.getDistance(
-      origin: lieuDepart,
-      destination: lieuArrivee,
-    );
-    lastDistance = result;
-    notifyListeners();
-    return result;
-  }
-
-  /// Publie un nouveau trajet. La distance est recalculée via l'API Google
-  /// juste avant l'enregistrement. Retourne `true` en cas de succès.
-  Future<bool> publishTrip({
+  void listenToTripHistory({
     required String driverId,
-    required String immatriculationVehicule,
-    required String lieuDepart,
-    required String lieuArrivee,
-    required num prixParPlace,
-  }) async {
-    isSaving = true;
-    saveError = null;
-    notifyListeners();
+  }) {
+    _historySubscription?.cancel();
 
-    try {
-      final distance = await calculateDistance(
-        lieuDepart: lieuDepart,
-        lieuArrivee: lieuArrivee,
-      );
-
-      final trip = TripEntity(
-        id: '',
-        driverId: driverId,
-        immatriculationVehicule: immatriculationVehicule,
-        lieuDepart: lieuDepart,
-        lieuArrivee: lieuArrivee,
-        distanceKm: distance.distanceKm,
-        prixParPlace: prixParPlace,
-        createdAt: DateTime.now(),
-      );
-
-      await publishTripUseCase(trip);
-      return true;
-    } catch (e) {
-      saveError = e.toString().replaceFirst('Exception: ', '');
-      return false;
-    } finally {
-      isSaving = false;
-      notifyListeners();
-    }
+    _historySubscription = getTripHistoryUseCase(
+      driverId: driverId,
+    ).listen(
+      (trips) {
+        _tripHistory = trips;
+        _errorMessage = null;
+        notifyListeners();
+      },
+      onError: (error) {
+        _errorMessage = _cleanError(error);
+        notifyListeners();
+      },
+    );
   }
 
-  /// Modifie un trajet existant. La distance est recalculée via l'API
-  /// Google si le lieu de départ ou d'arrivée a changé. Retourne `true` en
-  /// cas de succès.
-  Future<bool> updateTrip({
-    required TripEntity existing,
-    required String immatriculationVehicule,
-    required String lieuDepart,
-    required String lieuArrivee,
-    required num prixParPlace,
-  }) async {
-    isSaving = true;
-    saveError = null;
+  void clearMessages() {
+    _clearMessages();
     notifyListeners();
+  }
 
-    try {
-      var distanceKm = existing.distanceKm;
-      if (lieuDepart != existing.lieuDepart || lieuArrivee != existing.lieuArrivee) {
-        final distance = await calculateDistance(
-          lieuDepart: lieuDepart,
-          lieuArrivee: lieuArrivee,
-        );
-        distanceKm = distance.distanceKm;
-      }
+  void _clearMessages() {
+    _errorMessage = null;
+    _successMessage = null;
+  }
 
-      final trip = existing.copyWith(
-        immatriculationVehicule: immatriculationVehicule,
-        lieuDepart: lieuDepart,
-        lieuArrivee: lieuArrivee,
-        distanceKm: distanceKm,
-        prixParPlace: prixParPlace,
-      );
+  String _cleanError(Object error) {
+    final message = error.toString();
 
-      await updateTripUseCase(trip);
-      return true;
-    } catch (e) {
-      saveError = e.toString().replaceFirst('Exception: ', '');
-      return false;
-    } finally {
-      isSaving = false;
-      notifyListeners();
+    if (message.startsWith('Exception: ')) {
+      return message.substring('Exception: '.length);
     }
+
+    return message;
   }
 
   @override
   void dispose() {
-    _subscription?.cancel();
     _searchSubscription?.cancel();
+    _historySubscription?.cancel();
     super.dispose();
   }
 }

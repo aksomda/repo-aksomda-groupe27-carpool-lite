@@ -1,204 +1,249 @@
-// Gestion d'état des demandes de réservation (création, acceptation,
-// refus, annulation, filtrage par statut et par plage de dates).
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../domain/entities/booking_entity.dart';
 import '../../domain/entities/ride_request_entity.dart';
 import '../../domain/usecases/cancel_booking_usecase.dart';
 import '../../domain/usecases/confirm_booking_usecase.dart';
-import '../../domain/usecases/get_driver_requests_usecase.dart';
-import '../../domain/usecases/get_my_requests_usecase.dart';
-import '../../domain/usecases/reject_booking_usecase.dart';
+import '../../domain/usecases/reject_booking_request_usecase.dart';
 import '../../domain/usecases/request_booking_usecase.dart';
+import '../../domain/repositories/booking_repository.dart';
+
 
 class BookingProvider extends ChangeNotifier {
   final RequestBookingUseCase requestBookingUseCase;
   final ConfirmBookingUseCase confirmBookingUseCase;
-  final RejectBookingUseCase rejectBookingUseCase;
+  final RejectBookingRequestUseCase rejectBookingRequestUseCase;
   final CancelBookingUseCase cancelBookingUseCase;
-  final GetDriverRequestsUseCase getDriverRequestsUseCase;
-  final GetMyRequestsUseCase getMyRequestsUseCase;
+  final BookingRepository repository;
 
   BookingProvider({
     required this.requestBookingUseCase,
     required this.confirmBookingUseCase,
-    required this.rejectBookingUseCase,
+    required this.rejectBookingRequestUseCase,
     required this.cancelBookingUseCase,
-    required this.getDriverRequestsUseCase,
-    required this.getMyRequestsUseCase,
+    required this.repository,
   });
 
-  // ---------------------------------------------------------------------
-  // Demandes reçues (conducteur) — avec filtrage par statut et par
-  // plage de dates (date de la demande).
-  // ---------------------------------------------------------------------
+  bool _isLoading = false;
+  String? _errorMessage;
+  String? _successMessage;
 
+  List<BookingEntity> _userBookings = [];
   List<RideRequestEntity> _driverRequests = [];
-  bool isLoadingDriverRequests = true;
-  String? driverRequestsError;
+  List<RideRequestEntity> _userRequests = [];
 
-  RideRequestStatus? statutFiltre;
-  DateTime? dateDebutFiltre;
-  DateTime? dateFinFiltre;
+  StreamSubscription<List<BookingEntity>>? _bookingsSubscription;
+  StreamSubscription<List<RideRequestEntity>>? _requestsSubscription;
+  StreamSubscription<List<RideRequestEntity>>? _userRequestsSubscription;
 
-  StreamSubscription<List<RideRequestEntity>>? _driverSubscription;
-  String? _driverId;
+  bool get isLoading => _isLoading;
 
-  /// Demandes reçues, après application des filtres courants.
-  List<RideRequestEntity> get filteredDriverRequests {
-    return _driverRequests.where((r) {
-      if (statutFiltre != null && r.statut != statutFiltre) return false;
+  String? get errorMessage => _errorMessage;
 
-      if (dateDebutFiltre != null) {
-        final debut = DateTime(
-          dateDebutFiltre!.year,
-          dateDebutFiltre!.month,
-          dateDebutFiltre!.day,
-        );
-        if (r.dateDemande.isBefore(debut)) return false;
-      }
+  String? get successMessage => _successMessage;
 
-      if (dateFinFiltre != null) {
-        // Borne incluse jusqu'à la fin de la journée sélectionnée.
-        final fin = DateTime(
-          dateFinFiltre!.year,
-          dateFinFiltre!.month,
-          dateFinFiltre!.day,
-          23,
-          59,
-          59,
-        );
-        if (r.dateDemande.isAfter(fin)) return false;
-      }
+  List<BookingEntity> get userBookings => _userBookings;
 
-      return true;
-    }).toList();
-  }
+  List<RideRequestEntity> get driverRequests => _driverRequests;
 
-  /// (Ré)abonne le provider aux demandes reçues par le conducteur connecté.
-  void listenToDriverRequests(String driverId) {
-    if (_driverId == driverId && _driverSubscription != null) return;
+  /// Demandes du passager qui n'ont pas encore été acceptées (ou qui ont
+  /// été refusées) : une demande confirmée devient une BookingEntity et
+  /// apparaît via [userBookings], elle n'est donc pas dupliquée ici.
+  List<RideRequestEntity> get userPendingRequests => _userRequests
+      .where(
+        (request) => request.status != BookingStatus.confirmed,
+      )
+      .toList();
 
-    _driverId = driverId;
-    _driverSubscription?.cancel();
-    isLoadingDriverRequests = true;
-    notifyListeners();
-
-    _driverSubscription = getDriverRequestsUseCase(driverId).listen(
-      (data) {
-        _driverRequests = data;
-        isLoadingDriverRequests = false;
-        driverRequestsError = null;
-        notifyListeners();
-      },
-      onError: (e) {
-        driverRequestsError = 'Impossible de charger les demandes reçues : $e';
-        isLoadingDriverRequests = false;
-        notifyListeners();
-      },
-    );
-  }
-
-  void setStatutFiltre(RideRequestStatus? statut) {
-    statutFiltre = statut;
-    notifyListeners();
-  }
-
-  void setDateRangeFiltre({DateTime? dateDebut, DateTime? dateFin}) {
-    dateDebutFiltre = dateDebut;
-    dateFinFiltre = dateFin;
-    notifyListeners();
-  }
-
-  void clearFiltres() {
-    statutFiltre = null;
-    dateDebutFiltre = null;
-    dateFinFiltre = null;
-    notifyListeners();
-  }
-
-  // ---------------------------------------------------------------------
-  // Demandes envoyées (passager)
-  // ---------------------------------------------------------------------
-
-  List<RideRequestEntity> myRequests = [];
-  bool isLoadingMyRequests = true;
-  String? myRequestsError;
-
-  StreamSubscription<List<RideRequestEntity>>? _mySubscription;
-  String? _passengerId;
-
-  /// (Ré)abonne le provider aux demandes envoyées par le passager connecté.
-  void listenToMyRequests(String passengerId) {
-    if (_passengerId == passengerId && _mySubscription != null) return;
-
-    _passengerId = passengerId;
-    _mySubscription?.cancel();
-    isLoadingMyRequests = true;
-    notifyListeners();
-
-    _mySubscription = getMyRequestsUseCase(passengerId).listen(
-      (data) {
-        myRequests = data;
-        isLoadingMyRequests = false;
-        myRequestsError = null;
-        notifyListeners();
-      },
-      onError: (e) {
-        myRequestsError = 'Impossible de charger vos demandes : $e';
-        isLoadingMyRequests = false;
-        notifyListeners();
-      },
-    );
-  }
-
-  // ---------------------------------------------------------------------
-  // Actions (création, acceptation, refus, annulation)
-  // ---------------------------------------------------------------------
-
-  bool isSaving = false;
-  String? saveError;
-
-  Future<bool> requestBooking(RideRequestEntity request) async {
-    return _runAction(() async {
-      await requestBookingUseCase(request);
-    });
-  }
-
-  Future<bool> confirmRequest(String requestId) async {
-    return _runAction(() => confirmBookingUseCase(requestId));
-  }
-
-  Future<bool> rejectRequest(String requestId) async {
-    return _runAction(() => rejectBookingUseCase(requestId));
-  }
-
-  Future<bool> cancelRequest(String requestId) async {
-    return _runAction(() => cancelBookingUseCase(requestId));
-  }
-
-  Future<bool> _runAction(Future<void> Function() action) async {
-    isSaving = true;
-    saveError = null;
-    notifyListeners();
+  Future<void> requestBooking({
+    required String tripId,
+    required String passengerId,
+    required String driverId,
+    required int numberOfSeats,
+    required double totalPrice,
+  }) async {
+    _setLoading(true);
+    _clearMessages();
 
     try {
-      await action();
-      return true;
+      await requestBookingUseCase(
+        tripId: tripId,
+        passengerId: passengerId,
+        driverId: driverId,
+        numberOfSeats: numberOfSeats,
+        totalPrice: totalPrice,
+      );
+
+      _successMessage = 'Demande de réservation envoyée avec succès.';
     } catch (e) {
-      saveError = e.toString().replaceFirst('Exception: ', '');
-      return false;
+      _errorMessage = _cleanError(e);
     } finally {
-      isSaving = false;
-      notifyListeners();
+      _setLoading(false);
     }
+  }
+
+  Future<void> confirmBooking({
+    required String requestId,
+  }) async {
+    _setLoading(true);
+    _clearMessages();
+
+    try {
+      await confirmBookingUseCase(
+        requestId: requestId,
+      );
+
+      _successMessage = 'Réservation confirmée avec succès.';
+    } catch (e) {
+      _errorMessage = _cleanError(e);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> rejectBookingRequest({
+    required String requestId,
+  }) async {
+    _setLoading(true);
+    _clearMessages();
+
+    try {
+      await rejectBookingRequestUseCase(
+        requestId: requestId,
+      );
+
+      _successMessage = 'Demande de réservation refusée.';
+    } catch (e) {
+      _errorMessage = _cleanError(e);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> cancelBooking({
+    required String tripId,
+    required String bookingId,
+  }) async {
+    _setLoading(true);
+    _clearMessages();
+
+    try {
+      await cancelBookingUseCase(
+        tripId: tripId,
+        bookingId: bookingId,
+      );
+
+      _successMessage = 'Réservation annulée avec succès.';
+    } catch (e) {
+      _errorMessage = _cleanError(e);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  void listenToUserBookings({
+    required String passengerId,
+  }) {
+    _bookingsSubscription?.cancel();
+
+    _bookingsSubscription = repository
+        .getUserBookings(
+          passengerId: passengerId,
+        )
+        .listen(
+          (bookings) {
+            _userBookings = bookings;
+            // Une lecture réussie efface une éventuelle erreur précédente
+            // (ex. index Firestore manquant lors d'un essai antérieur) :
+            // sans ça, l'écran resterait bloqué sur le message d'erreur
+            // au lieu d'afficher "Aucune réservation" une fois la liste
+            // (à nouveau) vide.
+            _errorMessage = null;
+            notifyListeners();
+          },
+          onError: (error) {
+            _errorMessage = _cleanError(error);
+            notifyListeners();
+          },
+        );
+  }
+
+  void listenToUserRequests({
+    required String passengerId,
+  }) {
+    _userRequestsSubscription?.cancel();
+
+    _userRequestsSubscription = repository
+        .getUserRequests(
+          passengerId: passengerId,
+        )
+        .listen(
+          (requests) {
+            _userRequests = requests;
+            _errorMessage = null;
+            notifyListeners();
+          },
+          onError: (error) {
+            _errorMessage = _cleanError(error);
+            notifyListeners();
+          },
+        );
+  }
+
+  void listenToDriverRequests({
+    required String driverId,
+  }) {
+    _requestsSubscription?.cancel();
+
+    _requestsSubscription = repository
+        .getDriverRequests(
+          driverId: driverId,
+        )
+        .listen(
+          (requests) {
+            _driverRequests = requests;
+            _errorMessage = null;
+            notifyListeners();
+          },
+          onError: (error) {
+            _errorMessage = _cleanError(error);
+            notifyListeners();
+          },
+        );
+  }
+
+  void clearMessages() {
+    _clearMessages();
+    notifyListeners();
+  }
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  void _clearMessages() {
+    _errorMessage = null;
+    _successMessage = null;
+  }
+
+  String _cleanError(Object error) {
+    final message = error.toString();
+
+    if (message.startsWith('Exception: ')) {
+      return message.substring('Exception: '.length);
+    }
+
+    return message;
   }
 
   @override
   void dispose() {
-    _driverSubscription?.cancel();
-    _mySubscription?.cancel();
+    _bookingsSubscription?.cancel();
+    _requestsSubscription?.cancel();
+    _userRequestsSubscription?.cancel();
     super.dispose();
   }
 }

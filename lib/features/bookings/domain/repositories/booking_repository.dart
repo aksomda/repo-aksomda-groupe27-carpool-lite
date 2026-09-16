@@ -1,18 +1,37 @@
+import '../entities/booking_entity.dart';
 import '../entities/ride_request_entity.dart';
 
 abstract class BookingRepository {
-  /// Crée une demande de réservation. [request.id] peut être vide : un
-  /// identifiant Firestore est alors généré par l'implémentation, et la
-  /// demande persistée (avec son id définitif) est retournée.
-  Future<RideRequestEntity> requestBooking(RideRequestEntity request);
+  Future<RideRequestEntity> requestBooking({
+    required String tripId,
+    required String passengerId,
+    required String driverId,
+    required int numberOfSeats,
+    required double totalPrice,
+  });
 
-  /// Change le statut d'une demande (acceptation, refus, annulation).
-  Future<void> updateStatus(String requestId, RideRequestStatus statut);
+  Future<BookingEntity> confirmBooking({
+    required String requestId,
+  });
 
-  /// Demandes reçues par [driverId] sur ses trajets, du plus récent au
-  /// plus ancien.
-  Stream<List<RideRequestEntity>> getDriverRequests(String driverId);
+  Future<void> rejectBookingRequest({
+    required String requestId,
+  });
 
-  /// Demandes envoyées par [passengerId], du plus récent au plus ancien.
-  Stream<List<RideRequestEntity>> getMyRequests(String passengerId);
+  Future<void> cancelBooking({
+    required String tripId,
+    required String bookingId,
+  });
+
+  Stream<List<BookingEntity>> getUserBookings({
+    required String passengerId,
+  });
+
+  Stream<List<RideRequestEntity>> getDriverRequests({
+    required String driverId,
+  });
+
+  Stream<List<RideRequestEntity>> getUserRequests({
+    required String passengerId,
+  });
 }

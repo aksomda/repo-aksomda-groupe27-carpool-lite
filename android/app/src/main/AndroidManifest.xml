@@ -1,8 +1,33 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Requis pour tous les appels réseau (Firestore, Firebase Auth, tuiles
+         Google Maps, etc.). Le manifest "main" est celui utilisé pour les
+         builds release (flutter build apk) : seuls les manifests debug/
+         profile déclaraient cette permission, ce qui fait que l'APK release
+         posé sur un téléphone n'a jamais eu accès au réseau et provoquait
+         l'échec (fermeture) du module Trajets dès qu'un enregistrement
+         Firestore était tenté. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Requises par le plugin geolocator (écran de publication de trajet) :
+         sans elles, Geolocator.checkPermission()/requestPermission() lève une
+         PermissionDefinitionsNotFoundException fatale côté natif Android. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
     <application
         android:label="CarPool Lite"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Clé API Google Maps pour Android : SANS cette meta-data, le
+             widget GoogleMap (écran de publication de trajet) fait planter
+             l'application dès que la carte est initialisée sur Android,
+             contrairement au Web qui utilise sa propre clé JS déclarée dans
+             web/index.html. Remplacez YOUR_ANDROID_MAPS_API_KEY par une clé
+             Google Cloud Console de type "Android" (restreinte par
+             empreinte SHA-1 + nom de package), distincte de la clé JS Web. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="YOUR_ANDROID_MAPS_API_KEY"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

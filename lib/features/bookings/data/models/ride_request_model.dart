@@ -1,69 +1,72 @@
-// RideRequestModel : mapping Firestore <-> RideRequestEntity.
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../domain/entities/booking_entity.dart';
 import '../../domain/entities/ride_request_entity.dart';
 
 class RideRequestModel extends RideRequestEntity {
   const RideRequestModel({
     required super.id,
     required super.tripId,
-    required super.driverId,
     required super.passengerId,
-    required super.lieuDepart,
-    required super.lieuArrivee,
-    required super.nombrePlaces,
-    required super.statut,
-    required super.dateDemande,
+    required super.driverId,
+    required super.numberOfSeats,
+    required super.totalPrice,
+    required super.status,
+    required super.createdAt,
   });
 
-  factory RideRequestModel.fromEntity(RideRequestEntity request) {
-    return RideRequestModel(
-      id: request.id,
-      tripId: request.tripId,
-      driverId: request.driverId,
-      passengerId: request.passengerId,
-      lieuDepart: request.lieuDepart,
-      lieuArrivee: request.lieuArrivee,
-      nombrePlaces: request.nombrePlaces,
-      statut: request.statut,
-      dateDemande: request.dateDemande,
-    );
-  }
+  factory RideRequestModel.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> document,
+  ) {
+    final data = document.data() ?? {};
 
-  factory RideRequestModel.fromFirestore(String id, Map<String, dynamic> data) {
     return RideRequestModel(
-      id: id,
-      tripId: data['tripId'] ?? '',
-      driverId: data['driverId'] ?? '',
-      passengerId: data['passengerId'] ?? '',
-      lieuDepart: data['lieuDepart'] ?? '',
-      lieuArrivee: data['lieuArrivee'] ?? '',
-      nombrePlaces: (data['nombrePlaces'] is int)
-          ? data['nombrePlaces'] as int
-          : int.tryParse('${data['nombrePlaces'] ?? 0}') ?? 0,
-      statut: RideRequestStatusX.fromValue(data['statut'] ?? 'en_attente'),
-      dateDemande: _parseDate(data['dateDemande']),
+      id: document.id,
+      tripId: data['tripId']?.toString() ?? '',
+      passengerId: data['passengerId']?.toString() ?? '',
+      driverId: data['driverId']?.toString() ?? '',
+      numberOfSeats: (data['numberOfSeats'] as num?)?.toInt() ?? 1,
+      totalPrice: (data['totalPrice'] as num?)?.toDouble() ?? 0,
+      status: _statusFromString(data['status']),
+      createdAt: _dateFromFirestore(data['createdAt']),
     );
-  }
-
-  /// Accepte soit un [Timestamp] Firestore, soit une chaîne ISO 8601, pour
-  /// ne pas planter sur d'éventuels documents écrits différemment.
-  static DateTime _parseDate(dynamic value) {
-    if (value is Timestamp) return value.toDate();
-    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
-    return DateTime.now();
   }
 
   Map<String, dynamic> toFirestore() {
     return {
       'tripId': tripId,
-      'driverId': driverId,
       'passengerId': passengerId,
-      'lieuDepart': lieuDepart,
-      'lieuArrivee': lieuArrivee,
-      'nombrePlaces': nombrePlaces,
-      'statut': statut.value,
-      'dateDemande': Timestamp.fromDate(dateDemande),
+      'driverId': driverId,
+      'numberOfSeats': numberOfSeats,
+      'totalPrice': totalPrice,
+      'status': status.name,
+      'createdAt': Timestamp.fromDate(createdAt),
     };
+  }
+
+  static BookingStatus _statusFromString(dynamic value) {
+    switch (value?.toString()) {
+      case 'confirmed':
+        return BookingStatus.confirmed;
+      case 'cancelled':
+        return BookingStatus.cancelled;
+      case 'completed':
+        return BookingStatus.completed;
+      case 'pending':
+      default:
+        return BookingStatus.pending;
+    }
+  }
+
+  static DateTime _dateFromFirestore(dynamic value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+
+    if (value is DateTime) {
+      return value;
+    }
+
+    return DateTime.now();
   }
 }
