@@ -41,13 +41,21 @@ class CampusRemoteDataSource {
 
   // Flux affiché en direct : on retente plus longtemps en arrière-plan
   // (5 tentatives) avant d'abandonner.
+  //
+  // Le filtre "isDeleted" est appliqué côté client (et non via un
+  // `.where('isDeleted', isEqualTo: false)` Firestore) car une requête
+  // d'égalité exclurait silencieusement tout document où le champ
+  // "isDeleted" est absent — ce qui arrive pour des documents créés ou
+  // importés manuellement (console Firebase, script) sans ce champ.
   Stream<List<CampusModel>> getCampuses() {
     return FirestoreRetry.runStream(() {
       return _collection
-          .where('isDeleted', isEqualTo: false)
           .snapshots()
           .timeout(kFirestoreTimeout, onTimeout: (sink) => sink.addError(_timeoutMessage))
-          .map((snapshot) => snapshot.docs.map(CampusModel.fromFirestore).toList());
+          .map((snapshot) => snapshot.docs
+              .map(CampusModel.fromFirestore)
+              .where((campus) => !campus.isDeleted)
+              .toList());
     });
   }
 

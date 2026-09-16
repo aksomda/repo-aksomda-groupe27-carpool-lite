@@ -139,28 +139,45 @@ class _LoginScreenState extends State<LoginScreen> {
                     // ==================================================
                     // LOGO
                     // ==================================================
-                    Center(
-                      child: Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: [
-                            BoxShadow(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.25),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          'assets/images/logo_carpoollite.png',
-                          height: 120, // Ajustez la taille selon vos besoins
-                          width: 120,
-                        ),
-                      ),
-                    ),
+Center(
+  child: Container(
+    width: 105,
+    height: 105,
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      // Fond très clair basé sur la couleur principale du thème
+      color: theme.colorScheme.primary.withValues(alpha: 0.08),
+
+      borderRadius: BorderRadius.circular(28),
+
+      // Petite bordure légère
+      border: Border.all(
+        color: theme.colorScheme.primary.withValues(alpha: 0.12),
+        width: 1,
+      ),
+
+      // Ombre très légère
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 15,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: Image.asset(
+      'assets/images/logo_carpoollite.png',
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(
+          Icons.directions_car_rounded,
+          color: theme.colorScheme.primary,
+          size: 50,
+        );
+      },
+    ),
+  ),
+),
 
                     const SizedBox(height: 22),
 
@@ -256,6 +273,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               tooltip: _obscurePassword
                                   ? 'Afficher le mot de passe'
                                   : 'Masquer le mot de passe',
+                              // La taille tactile minimale par défaut d'un
+                              // IconButton (48x48) dépasse la hauteur
+                              // disponible dans le suffixIcon du champ, ce
+                              // qui provoquait un "RenderFlex overflowed on
+                              // the bottom" : on la retire explicitement.
+                              constraints: const BoxConstraints(),
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
                               icon: Icon(
                                 _obscurePassword
                                     ? Icons.visibility_outlined

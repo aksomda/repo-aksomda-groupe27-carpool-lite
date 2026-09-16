@@ -1,61 +1,108 @@
-import 'dart:async';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'core/router/app_router.dart';
+import 'core/di/injector.dart';
 import 'core/firebase/firebase_status.dart';
+import 'core/router/app_router.dart';
+
+import 'features/notification/presentation/services/notification_service.dart';
 import 'firebase_options.dart';
 
-void main() {
-  // runZonedGuarded capte toute erreur non interceptée (y compris pendant
-  // l'initialisation de Firebase) pour NE JAMAIS laisser un écran blanc
-  // silencieux : on affiche un écran d'erreur explicite à la place.
-  runZonedGuarded(
-    () async {
-      WidgetsFlutterBinding.ensureInitialized();
+// =======================================================
+// NOTIFICATIONS EN ARRIÈRE-PLAN
+// =======================================================
 
-      try {
-        // IMPORTANT : on passe explicitement les options de la plateforme.
-        // Sans ce paramètre, Firebase.initializeApp() dépend d'un fichier de
-        // configuration natif (google-services.json / GoogleService-Info.plist)
-        // qui n'est pas présent dans ce dépôt : l'appel lève alors une
-        // exception AVANT que runApp() ne soit appelé, ce qui produit
-        // exactement une page blanche (aucun widget n'a encore été monté).
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint("Message reçu en arrière-plan : ${message.messageId}");
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // =======================================================
+  // FIREBASE
+  // =======================================================
+  // FirebaseStatus est lu par tous les dépôts (universités, campus,
+  // formations, UFR, niveaux académiques...) pour savoir s'ils doivent
+  // utiliser Firestore ou basculer sur leur source de données locale.
+  // Sans cet appel à markAvailable(), ils restent TOUJOURS en mode
+  // hors-ligne, même quand Firebase est correctement initialisé.
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    FirebaseStatus.markAvailable();
+  } catch (e, stackTrace) {
+    FirebaseStatus.markUnavailable();
+    debugPrint('⚠️ Firebase indisponible, bascule en mode hors-ligne : $e');
+    debugPrint('$stackTrace');
+  }
+
+  // =======================================================
+  // RESTAURATION DE LA SESSION
+  // =======================================================
+  // Firebase Auth conserve la session d'un lancement à l'autre, mais
+  // AuthProvider repartait de zéro : l'utilisateur se retrouvait déconnecté
+  // à chaque redémarrage, et tous les écrans qui lisent
+  // `Injector.authProvider.user?.uid ?? ''` (demandes de réservation,
+  // véhicules, historique de trajets...) interrogeaient Firestore avec un
+  // identifiant vide, donc n'affichaient rien.
+  //
+  // On restaure la session AVANT runApp() pour que la première évaluation
+  // des redirections du routeur connaisse déjà l'utilisateur.
+  if (FirebaseStatus.available) {
+    await Injector.authProvider.checkCurrentUser();
+  }
+
+  // =======================================================
+  // NOTIFICATIONS (FCM)
+  // =======================================================
+  // Tout ce bloc est mis en sandbox : sur le web notamment, l'enregistrement
+  // du service worker ou l'absence de clé VAPID peuvent faire échouer FCM.
+  // Une erreur ici ne doit jamais empêcher runApp() de s'exécuter, sous
+  // peine d'obtenir une page blanche silencieuse (ce qui arrivait avant).
+  try {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    await NotificationService.instance.initialize();
+
+    // Sur le web, getToken() nécessite une clé VAPID (Console Firebase >
+    // Cloud Messaging > Configuration web > Génération de paire de clés).
+    // Remplacez la valeur ci-dessous par votre propre clé publique.
+    final fcmToken = await FirebaseMessaging.instance.getToken(
+      vapidKey: kIsWeb
+          ? 'BLWOny4p88o2cloWcLqYyUxiYtEDvKQ-frIfnWEvJeCWBHvu3i6lyBFlNgBrcwyl0k39JaYqTH3mhBq182Dpmm0'
+          : null,
+    );
+    debugPrint("FCM Token: $fcmToken");
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      debugPrint('🔔 Message reçu au premier plan !');
+      debugPrint('Titre: ${message.notification?.title}');
+      debugPrint('Corps: ${message.notification?.body}');
+      debugPrint('Data: ${message.data}');
+
+      final notification = message.notification;
+
+      if (notification != null) {
+        await NotificationService.instance.showLocalNotification(
+          title: notification.title ?? 'CarPool Lite',
+          body: notification.body ?? '',
+          payload: message.data,
         );
-
-        // Active le cache local (IndexedDB sur le web, SQLite sur
-        // mobile/desktop) : une fois une collection lue au moins une fois,
-        // les lectures suivantes peuvent être servies depuis ce cache si le
-        // réseau est temporairement indisponible, au lieu d'attendre le
-        // délai complet puis d'échouer. Ne compense pas une base Firestore
-        // jamais créée ni des règles qui bloquent la lecture (voir
-        // DEPANNAGE_FIRESTORE.md) : uniquement les coupures réseau
-        // transitoires une fois qu'une première lecture a réussi.
-        FirebaseFirestore.instance.settings = const Settings(
-          persistenceEnabled: true,
-        );
-
-        FirebaseStatus.markAvailable();
-
-        runApp(const CarpoolLiteApp());
-      } catch (error, stackTrace) {
-        FirebaseStatus.markUnavailable();
-        // On journalise l'erreur réelle dans la console (utile en debug/logcat)
-        // puis on affiche un écran lisible plutôt qu'un écran blanc.
-        debugPrint('Erreur d\'initialisation Firebase : $error');
-        debugPrint('$stackTrace');
-        runApp(_InitializationErrorApp(error: error));
       }
-    },
-    (error, stackTrace) {
-      debugPrint('Erreur non interceptée : $error');
-      debugPrint('$stackTrace');
-    },
-  );
+    });
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ Initialisation FCM ignorée (non bloquante) : $e');
+    debugPrint('$stackTrace');
+  }
+
+  runApp(const ProviderScope(child: CarpoolLiteApp()));
 }
 
 class CarpoolLiteApp extends StatelessWidget {
@@ -64,68 +111,17 @@ class CarpoolLiteApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Carpool Lite - Covoiturage Universitaire',
+      title: 'Carpool Lite',
       debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
-      ),
-    );
-  }
-}
-
-/// Application de secours affichée UNIQUEMENT si Firebase n'a pas pu
-/// s'initialiser (mauvais projet, clé API invalide, pas de réseau, etc.).
-/// Remplace la page blanche par un message exploitable pour le débogage,
-/// au lieu de planter silencieusement avant runApp().
-class _InitializationErrorApp extends StatelessWidget {
-  final Object error;
-
-  const _InitializationErrorApp({required this.error});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.cloud_off,
-                    size: 56,
-                    color: Colors.redAccent,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Connexion à Firebase impossible',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Vérifiez lib/firebase_options.dart (projet Firebase '
-                    '"carpoollite"), la présence de google-services.json '
-                    '(Android) / GoogleService-Info.plist (iOS) et votre '
-                    'connexion réseau. Voir DEPANNAGE_FIRESTORE.md.',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '$error',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1468F5)),
+        scaffoldBackgroundColor: const Color(0xFFF8FBFF),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: false,
         ),
       ),
     );
