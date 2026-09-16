@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/di/injector.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import 'profile_screen.dart' show ProfileColors;
 
 /// Écran "Mes préférences" : notifications, confidentialité et langue.
@@ -149,7 +151,19 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ProfileColors.background,
-      appBar: AppBar(title: const Text('Mes préférences')),
+      drawer: AppDrawer(authProvider: Injector.authProvider),
+      appBar: AppBar(
+        title: const Text('Mes préférences'),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

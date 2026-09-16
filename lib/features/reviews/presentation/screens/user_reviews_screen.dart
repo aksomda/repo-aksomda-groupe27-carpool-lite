@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/di/injector.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../providers/review_provider.dart';
 import '../widgets/rating_stars.dart';
 
@@ -30,7 +32,19 @@ class _UserReviewsScreenState extends State<UserReviewsScreen> {
     final reviewProvider = context.watch<ReviewProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mes évaluations')),
+      drawer: AppDrawer(authProvider: Injector.authProvider),
+      appBar: AppBar(
+        title: const Text('Mes évaluations'),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
+      ),
       body: Builder(
         builder: (context) {
           if (reviewProvider.isLoadingReviews) {

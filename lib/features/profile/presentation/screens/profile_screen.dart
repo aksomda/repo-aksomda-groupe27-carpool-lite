@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../../../navigation/presentation/widgets/bottom_navigation.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/profile_avatar.dart';
@@ -46,6 +47,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const _placeholderTripsProposed = 3;
   static const _placeholderTripsCompleted = 5;
   static const _placeholderRating = 4.8;
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -157,7 +160,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final errorMessage = widget.profileProvider.errorMessage;
 
         return Scaffold(
+          key: _scaffoldKey,
           backgroundColor: AppColors.background,
+          drawer: AppDrawer(authProvider: widget.authProvider),
 
           body: SafeArea(
             child: isLoading && profile == null
@@ -173,6 +178,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 110),
                     children: [
                       _ProfileHeader(
+                        onMenuTap: () =>
+                            _scaffoldKey.currentState?.openDrawer(),
                         onSettingsTap: () {
                           _comingSoon('Préférences bientôt disponibles.');
                         },
@@ -311,13 +318,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 class _ProfileHeader extends StatelessWidget {
   final VoidCallback onSettingsTap;
+  final VoidCallback onMenuTap;
 
-  const _ProfileHeader({required this.onSettingsTap});
+  const _ProfileHeader({required this.onSettingsTap, required this.onMenuTap});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
+        IconButton(
+          onPressed: onMenuTap,
+          icon: const Icon(Icons.menu_rounded, color: AppColors.navy),
+        ),
+
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Image.asset(

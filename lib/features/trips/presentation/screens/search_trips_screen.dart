@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/di/injector.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../widgets/trip_card.dart';
 import 'trip_detail_screen.dart';
 
@@ -146,8 +148,18 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
     final displayedTrips = filteredTrips;
 
     return Scaffold(
+      drawer: AppDrawer(authProvider: Injector.authProvider),
       appBar: AppBar(
         title: const Text('Rechercher un trajet'),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [

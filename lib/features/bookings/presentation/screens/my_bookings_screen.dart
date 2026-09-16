@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/di/injector.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/booking_card.dart';
 import '../../domain/entities/booking_entity.dart';
@@ -47,9 +49,19 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     final provider = widget.bookingProvider;
 
     return Scaffold(
+      drawer: AppDrawer(authProvider: Injector.authProvider),
       appBar: AppBar(
         title: const Text('Mes réservations'),
         centerTitle: true,
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
       ),
       body: _buildBody(provider),
     );

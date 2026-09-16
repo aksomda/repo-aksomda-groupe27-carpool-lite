@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../../../core/di/injector.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../providers/university_provider.dart';
 import '../widgets/university_card.dart';
 
@@ -11,7 +14,19 @@ class UniversitySelectionScreen extends StatelessWidget {
     final provider = context.watch<UniversityProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Choisis ton université')),
+      drawer: AppDrawer(authProvider: Injector.authProvider),
+      appBar: AppBar(
+        title: const Text('Choisis ton université'),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
+      ),
       body: Builder(
         builder: (context) {
           if (provider.isLoading) {

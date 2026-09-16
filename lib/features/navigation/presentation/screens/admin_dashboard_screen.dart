@@ -271,21 +271,46 @@ class _StatCardShell extends StatelessWidget {
           BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
-            alignment: Alignment.center,
-            child: Icon(icon, color: color, size: 18),
-          ),
-          Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-          Text(caption, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-        ],
+      // La carte a une hauteur contrainte (grille 2x2 à childAspectRatio
+      // fixe) : dès que le libellé ou la légende passent sur 2 lignes
+      // (ex. "Firebase non configuré"), le contenu ne tenait plus dans
+      // la hauteur disponible ("RenderFlex overflowed on the bottom").
+      // On force donc un agencement compact (mainAxisSize.min + espaces
+      // fixes au lieu de spaceBetween) puis on sécurise avec un
+      // FittedBox qui réduit légèrement le contenu si besoin, sans
+      // jamais déborder.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(height: 6),
+            Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -744,23 +769,31 @@ class _QuickAction extends StatelessWidget {
         onTap: () => onTap(context),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(color: const Color(0xFF2952E3).withValues(alpha: 0.1), shape: BoxShape.circle),
-                alignment: Alignment.center,
-                child: Icon(icon, color: const Color(0xFF2952E3), size: 18),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-              ),
-            ],
+          // FittedBox : évite tout débordement si le libellé est un peu
+          // trop long pour la largeur de la tuile (grille 3 colonnes).
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(color: const Color(0xFF2952E3).withValues(alpha: 0.1), shape: BoxShape.circle),
+                  alignment: Alignment.center,
+                  child: Icon(icon, color: const Color(0xFF2952E3), size: 18),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/di/injector.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../providers/notification_provider.dart';
 
 class NotificationsScreen
@@ -23,10 +25,20 @@ class NotificationsScreen
     );
 
     return Scaffold(
+      drawer: AppDrawer(authProvider: Injector.authProvider),
       appBar: AppBar(
         title: const Text(
           'Notifications',
         ),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
       ),
       body: notifications.when(
         loading: () => const Center(

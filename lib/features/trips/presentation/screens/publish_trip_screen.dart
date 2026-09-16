@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../../core/di/injector.dart';
+import '../../../navigation/presentation/widgets/app_drawer.dart';
+
 class PublishTripScreen extends StatefulWidget {
   const PublishTripScreen({super.key});
 
@@ -334,8 +337,18 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: AppDrawer(authProvider: Injector.authProvider),
       appBar: AppBar(
         title: const Text("Publication d'un trajet"),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
       ),
       body: Form(
         key: _formKey,
