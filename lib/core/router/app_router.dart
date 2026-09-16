@@ -29,6 +29,8 @@ import '../../features/universities/presentation/pages/university_list_page.dart
 import '../../features/user_management/presentation/screens/user_management_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/bookings/presentation/providers/booking_provider.dart';
+import '../../features/vehicles/presentation/screens/add_vehicle_screen.dart';
+import '../../features/favorites/presentation/screens/favorites_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/auth',
@@ -43,6 +45,28 @@ final GoRouter appRouter = GoRouter(
       if (!isAdmin) return '/home';
       return null;
     }
+
+    // Les écrans ci-dessous lisent tous `Injector.authProvider.user?.uid`.
+    // Sans ce garde-fou, un utilisateur non connecté y accédait avec un
+    // identifiant vide et n'obtenait qu'un écran vide, sans explication.
+    const protectedRoutes = <String>[
+      '/home',
+      '/profile',
+      '/trips',
+      '/bookings',
+      '/vehicles',
+      '/favorites',
+      '/reviews',
+      '/notifications',
+      '/chat',
+      '/statistics',
+    ];
+
+    final isProtected = protectedRoutes.any(
+      (route) => location == route || location.startsWith('$route/'),
+    );
+
+    if (isProtected && user == null) return '/auth';
 
     // Un administrateur qui atterrit sur l'accueil étudiant (ex. juste
     // après connexion) est redirigé vers son propre tableau de bord.
@@ -90,17 +114,55 @@ final GoRouter appRouter = GoRouter(
 
     GoRoute(
       path: '/trips/publish',
-      builder: (_, _) => const PublishTripScreen(),
+      builder: (_, _) => ChangeNotifierProvider(
+        create: (_) => Injector.createTripProvider(),
+        child: const PublishTripScreen(),
+      ),
     ),
+    // La recherche affiche un bouton « favori » sur chaque trajet : elle a
+    // donc besoin du TripProvider ET du FavoriteProvider.
     GoRoute(
       path: '/trips/search',
-      builder: (_, _) => const SearchTripsScreen(),
+      builder: (context, state) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) => Injector.createTripProvider(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Injector.createFavoriteProvider(),
+          ),
+        ],
+        child: SearchTripsScreen(
+          initialDeparture: state.uri.queryParameters['departure'],
+          initialArrival: state.uri.queryParameters['arrival'],
+          initialDate: state.uri.queryParameters['date'],
+          initialPassengers: int.tryParse(
+            state.uri.queryParameters['passengers'] ?? '',
+          ),
+        ),
+      ),
     ),
     GoRoute(
       path: '/trips/history',
-      builder: (_, _) => const TripHistoryScreen(),
+      builder: (_, _) => ChangeNotifierProvider(
+        create: (_) => Injector.createTripProvider(),
+        child: const TripHistoryScreen(),
+      ),
     ),
-    GoRoute(path: '/trips', builder: (_, _) => const SearchTripsScreen()),
+    GoRoute(
+      path: '/trips',
+      builder: (_, _) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) => Injector.createTripProvider(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Injector.createFavoriteProvider(),
+          ),
+        ],
+        child: const SearchTripsScreen(),
+      ),
+    ),
 
     GoRoute(
   path: '/bookings',
@@ -128,16 +190,47 @@ final GoRouter appRouter = GoRouter(
     );
   },
 ),
-    GoRoute(path: '/vehicles', builder: (_, _) => const VehicleListScreen()),
+    GoRoute(
+      path: '/vehicles',
+      builder: (_, _) => ChangeNotifierProvider(
+        create: (_) => Injector.createVehicleProvider(),
+        child: VehicleListScreen(
+          ownerId: Injector.authProvider.user?.uid ?? '',
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/vehicles/add',
+      builder: (_, _) => ChangeNotifierProvider(
+        create: (_) => Injector.createVehicleProvider(),
+        child: AddVehicleScreen(
+          ownerId: Injector.authProvider.user?.uid ?? '',
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/favorites',
+      builder: (_, _) => ChangeNotifierProvider(
+        create: (_) => Injector.createFavoriteProvider(),
+        child: FavoritesScreen(
+          userId: Injector.authProvider.user?.uid ?? '',
+        ),
+      ),
+    ),
     GoRoute(
       path: '/chat',
       builder: (_, _) => ProviderScope(
         child: ChatListScreen(authProvider: Injector.authProvider),
       ),
     ),
+    // Correctif : l'identifiant était codé en dur à '' — la requête
+    // Firestore ne renvoyait donc jamais aucune notification, quel que
+    // soit l'utilisateur connecté.
     GoRoute(
       path: '/notifications',
-      builder: (_, _) => const NotificationsScreen(userId: ''),
+      builder: (_, _) => NotificationsScreen(
+        userId: Injector.authProvider.user?.uid ?? '',
+      ),
     ),
     GoRoute(
       path: '/reviews',

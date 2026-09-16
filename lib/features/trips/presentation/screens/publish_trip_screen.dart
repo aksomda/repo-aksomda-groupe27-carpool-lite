@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../core/di/injector.dart';
+import '../providers/trip_provider.dart';
 
 class PublishTripScreen extends StatefulWidget {
   const PublishTripScreen({super.key});
@@ -206,7 +210,7 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
   // PUBLICATION
   // ============================================================
 
-  void _publishTrip() {
+  Future<void> _publishTrip() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -256,58 +260,38 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
       return;
     }
 
-    // ==========================================================
-    // DONNEES DU TRAJET
-    // ==========================================================
+    final user = Injector.authProvider.user;
+    if (user == null) {
+      _showMessage('Utilisateur non connecté.');
+      return;
+    }
 
-    debugPrint('========================================');
-    debugPrint('PUBLICATION DU TRAJET');
-    debugPrint('========================================');
-
-    debugPrint(
-      'Départ : ${_departureController.text}',
+    final provider = context.read<TripProvider>();
+    final trip = await provider.publishTrip(
+      driverId: user.uid,
+      departure: _departureController.text.trim(),
+      arrival: _arrivalController.text.trim(),
+      departureLatitude: _departurePosition!.latitude,
+      departureLongitude: _departurePosition!.longitude,
+      arrivalLatitude: _arrivalPosition!.latitude,
+      arrivalLongitude: _arrivalPosition!.longitude,
+      departureDateTime: departureDateTime,
+      pricePerSeat: price,
+      totalSeats: _totalSeats,
     );
 
-    debugPrint(
-      'Arrivée : ${_arrivalController.text}',
-    );
+    if (!mounted) return;
 
-    debugPrint(
-      'Prix : $price',
-    );
-
-    debugPrint(
-      'Places : $_totalSeats',
-    );
-
-    debugPrint(
-      'Date : $departureDateTime',
-    );
-
-    debugPrint(
-      'Départ latitude : '
-      '${_departurePosition!.latitude}',
-    );
-
-    debugPrint(
-      'Départ longitude : '
-      '${_departurePosition!.longitude}',
-    );
-
-    debugPrint(
-      'Arrivée latitude : '
-      '${_arrivalPosition!.latitude}',
-    );
-
-    debugPrint(
-      'Arrivée longitude : '
-      '${_arrivalPosition!.longitude}',
-    );
-
-    debugPrint('========================================');
+    if (trip != null) {
+      _showMessage(
+        provider.successMessage ?? 'Trajet publié avec succès.',
+      );
+      Navigator.of(context).pop();
+      return;
+    }
 
     _showMessage(
-      'Trajet prêt à être publié.',
+      provider.errorMessage ?? 'Impossible de publier le trajet.',
     );
   }
 
@@ -747,22 +731,37 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
               // PUBLICATION
               // ==================================================
 
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  onPressed: _publishTrip,
-                  icon: const Icon(
-                    Icons.directions_car,
-                  ),
-                  label: const Text(
-                    'Publier le trajet',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+              Consumer<TripProvider>(
+                builder: (context, provider, _) {
+                  return SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed:
+                          provider.isLoading ? null : _publishTrip,
+                      icon: provider.isLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.directions_car,
+                            ),
+                      label: Text(
+                        provider.isLoading
+                            ? 'Publication...'
+                            : 'Publier le trajet',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ],
           ),

@@ -1,11 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../core/di/injector.dart';
+import '../../../../core/network/maps_api_client.dart';
+import '../../../favorites/presentation/providers/favorite_provider.dart';
+import '../../../favorites/presentation/widgets/favorite_button.dart';
+import '../../domain/entities/trip_entity.dart';
+import '../providers/trip_provider.dart';
 import '../widgets/trip_card.dart';
 import 'trip_detail_screen.dart';
 
 class SearchTripsScreen extends StatefulWidget {
+  final String? initialDeparture;
+  final String? initialArrival;
+  final String? initialDate;
+  final int? initialPassengers;
+
   const SearchTripsScreen({
     super.key,
+    this.initialDeparture,
+    this.initialArrival,
+    this.initialDate,
+    this.initialPassengers,
   });
 
   @override
@@ -13,74 +29,99 @@ class SearchTripsScreen extends StatefulWidget {
 }
 
 class _SearchTripsScreenState extends State<SearchTripsScreen> {
-  final TextEditingController departureController =
-      TextEditingController();
-
-  final TextEditingController arrivalController =
-      TextEditingController();
+  final TextEditingController departureController = TextEditingController();
+  final TextEditingController arrivalController = TextEditingController();
 
   String? selectedDate;
 
-  final List<Map<String, dynamic>> trips = [
-    {
-      'id': 'trip_001',
-      'driverName': 'Chantal M.',
-      'departure': 'Université Nongo Conakry',
-      'arrival': 'Kaloum',
-      'departureTime': '07:30',
-      'duration': '2h10',
-      'availableSeats': 4,
-      'price': 1500.0,
-      'rating': 4.8,
-      'date': 'Aujourd’hui',
-    },
-    {
-      'id': 'trip_002',
-      'driverName': 'Kevin T.',
-      'departure': 'Sonfonia',
-      'arrival': 'Kaloum',
-      'departureTime': '08:00',
-      'duration': '2h00',
-      'availableSeats': 3,
-      'price': 1200.0,
-      'rating': 4.6,
-      'date': 'Aujourd’hui',
-    },
-    {
-      'id': 'trip_003',
-      'driverName': 'Sandra B.',
-      'departure': 'Lambanyi',
-      'arrival': 'Université Gamal Abdel Nasser',
-      'departureTime': '08:15',
-      'duration': '2h30',
-      'availableSeats': 4,
-      'price': 1500.0,
-      'rating': 4.9,
-      'date': 'Aujourd’hui',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    departureController.text = widget.initialDeparture ?? '';
+    arrivalController.text = widget.initialArrival ?? '';
 
-  List<Map<String, dynamic>> get filteredTrips {
-    final departure = departureController.text.trim().toLowerCase();
-    final arrival = arrivalController.text.trim().toLowerCase();
+    if (widget.initialDate != null && widget.initialDate!.isNotEmpty) {
+      selectedDate = _formatDateValue(widget.initialDate!);
+    }
 
-    return trips.where((trip) {
-      final tripDeparture =
-          trip['departure'].toString().toLowerCase();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _search();
 
-      final tripArrival =
-          trip['arrival'].toString().toLowerCase();
+      // Charge les favoris de l'utilisateur pour que le cœur de chaque
+      // trajet reflète immédiatement le bon état.
+      context.read<FavoriteProvider>().loadFavorites(_currentUserId);
+    });
+  }
 
-      final departureMatches =
-          departure.isEmpty ||
-          tripDeparture.contains(departure);
+  String _formatDateValue(String dateValue) {
+    try {
+      final parsedDate = DateTime.parse(dateValue);
+      return '${parsedDate.day.toString().padLeft(2, '0')}/'
+          '${parsedDate.month.toString().padLeft(2, '0')}/'
+          '${parsedDate.year}';
+    } catch (_) {
+      return dateValue;
+    }
+  }
 
-      final arrivalMatches =
-          arrival.isEmpty ||
-          tripArrival.contains(arrival);
+  DateTime? _parsedSelectedDate() {
+    if (selectedDate == null || selectedDate!.isEmpty) {
+      return null;
+    }
 
-      return departureMatches && arrivalMatches;
-    }).toList();
+    try {
+      return DateTime.parse(selectedDate!);
+    } catch (_) {
+      final parts = selectedDate!.split('/');
+      if (parts.length == 3) {
+        final day = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final year = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          return DateTime(year, month, day);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  String _formatTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:'
+        '${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  String get _currentUserId => Injector.authProvider.user?.uid ?? '';
+
+  /// Durée estimée du trajet à partir des coordonnées enregistrées.
+  /// Affiche « - » si le trajet n'a pas de position exploitable.
+  String _estimatedDuration(TripEntity trip) {
+    final estimate = MapsApiClient.estimateRoute(
+      startLatitude: trip.departureLatitude,
+      startLongitude: trip.departureLongitude,
+      endLatitude: trip.arrivalLatitude,
+      endLongitude: trip.arrivalLongitude,
+    );
+
+    return estimate?.formattedDuration ?? '-';
+  }
+
+  String _formatDate(DateTime dateTime) {
+    return '${dateTime.day.toString().padLeft(2, '0')}/'
+        '${dateTime.month.toString().padLeft(2, '0')}/'
+        '${dateTime.year}';
+  }
+
+  List<TripEntity> _visibleTrips(List<TripEntity> trips) {
+    final minSeats = widget.initialPassengers;
+    if (minSeats == null) {
+      return trips;
+    }
+
+    return trips
+        .where((trip) => trip.availableSeats >= minSeats)
+        .toList();
   }
 
   @override
@@ -107,35 +148,37 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
     }
 
     setState(() {
-      selectedDate =
-          '${pickedDate.day.toString().padLeft(2, '0')}/'
-          '${pickedDate.month.toString().padLeft(2, '0')}/'
-          '${pickedDate.year}';
+      selectedDate = _formatDate(pickedDate);
     });
   }
 
   void _search() {
-    setState(() {});
+    context.read<TripProvider>().searchTrips(
+      departure: departureController.text.trim().isEmpty
+          ? null
+          : departureController.text.trim(),
+      arrival: arrivalController.text.trim().isEmpty
+          ? null
+          : arrivalController.text.trim(),
+      date: _parsedSelectedDate(),
+    );
   }
 
-  void _openTrip(Map<String, dynamic> trip) {
+  void _openTrip(TripEntity trip) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => TripDetailScreen(
-          tripId: trip['id'].toString(),
-          driverName: trip['driverName'].toString(),
-          departure: trip['departure'].toString(),
-          arrival: trip['arrival'].toString(),
-          date: selectedDate ?? trip['date'].toString(),
-          departureTime: trip['departureTime'].toString(),
-          duration: trip['duration'].toString(),
-          availableSeats:
-              (trip['availableSeats'] as num).toInt(),
-          price:
-              (trip['price'] as num).toDouble(),
-          rating:
-              (trip['rating'] as num).toDouble(),
+          tripId: trip.id,
+          driverName: 'Conducteur',
+          departure: trip.departure,
+          arrival: trip.arrival,
+          date: _formatDate(trip.departureDateTime),
+          departureTime: _formatTime(trip.departureDateTime),
+          duration: _estimatedDuration(trip),
+          availableSeats: trip.availableSeats,
+          price: trip.pricePerSeat,
+          rating: 0,
         ),
       ),
     );
@@ -143,7 +186,8 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final displayedTrips = filteredTrips;
+    final provider = context.watch<TripProvider>();
+    final displayedTrips = _visibleTrips(provider.trips);
 
     return Scaffold(
       appBar: AppBar(
@@ -151,7 +195,6 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
       ),
       body: Column(
         children: [
-          // Zone de recherche
           Container(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -166,9 +209,7 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 TextField(
                   controller: arrivalController,
                   decoration: const InputDecoration(
@@ -179,9 +220,7 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 Row(
                   children: [
                     Expanded(
@@ -198,7 +237,7 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: _search,
+                        onPressed: provider.isLoading ? null : _search,
                         icon: const Icon(Icons.search),
                         label: const Text('Rechercher'),
                       ),
@@ -208,52 +247,58 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
               ],
             ),
           ),
-
           const Divider(height: 1),
-
-          // Liste des trajets
+          if (provider.errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                provider.errorMessage!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
           Expanded(
-            child: displayedTrips.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Aucun trajet trouvé.',
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: displayedTrips.length,
-                    itemBuilder: (context, index) {
-                      final trip = displayedTrips[index];
+            child: provider.isLoading && displayedTrips.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : displayedTrips.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'Aucun trajet trouvé.',
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: displayedTrips.length,
+                        itemBuilder: (context, index) {
+                          final trip = displayedTrips[index];
 
-                      return TripCard(
-                        tripId: trip['id'].toString(),
-                        driverName:
-                            trip['driverName'].toString(),
-                        departure:
-                            trip['departure'].toString(),
-                        arrival:
-                            trip['arrival'].toString(),
-                        departureTime:
-                            trip['departureTime'].toString(),
-                        duration:
-                            trip['duration'].toString(),
-                        availableSeats:
-                            (trip['availableSeats'] as num)
-                                .toInt(),
-                        price:
-                            (trip['price'] as num).toDouble(),
-                        rating:
-                            (trip['rating'] as num).toDouble(),
-                        date:
-                            selectedDate ??
-                            trip['date'].toString(),
-                        onTap: () => _openTrip(trip),
-                      );
-                    },
-                  ),
+                          return TripCard(
+                            tripId: trip.id,
+                            driverName: 'Conducteur',
+                            departure: trip.departure,
+                            arrival: trip.arrival,
+                            departureTime: _formatTime(trip.departureDateTime),
+                            duration: _estimatedDuration(trip),
+                            availableSeats: trip.availableSeats,
+                            price: trip.pricePerSeat,
+                            rating: 0,
+                            date: _formatDate(trip.departureDateTime),
+                            onTap: () => _openTrip(trip),
+                            trailing: FavoriteButton(
+                              userId: _currentUserId,
+                              tripId: trip.id,
+                              departure: trip.departure,
+                              arrival: trip.arrival,
+                              departureDateTime: trip.departureDateTime,
+                              pricePerSeat: trip.pricePerSeat,
+                              driverId: trip.driverId,
+                              size: 22,
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),

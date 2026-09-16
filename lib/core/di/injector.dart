@@ -44,6 +44,31 @@ import '../../features/bookings/domain/usecases/reject_booking_request_usecase.d
 import '../../features/bookings/domain/usecases/cancel_booking_usecase.dart';
 import '../../features/bookings/presentation/providers/booking_provider.dart';
 
+import '../../features/trips/data/datasources/trip_remote_datasource.dart';
+import '../../features/trips/data/repositories/trip_repository_impl.dart';
+import '../../features/trips/domain/usecases/get_trip_history_usecase.dart';
+import '../../features/trips/domain/usecases/publish_trip_usecase.dart';
+import '../../features/trips/domain/usecases/search_trips_usecase.dart';
+import '../../features/trips/presentation/providers/trip_provider.dart';
+
+import '../../features/vehicles/data/datasources/vehicle_remote_datasource.dart';
+import '../../features/vehicles/data/repositories/vehicle_repository_impl.dart';
+import '../../features/vehicles/domain/repositories/vehicle_repository.dart';
+import '../../features/vehicles/domain/usecases/add_vehicle_usecase.dart';
+import '../../features/vehicles/domain/usecases/delete_vehicle_usecase.dart';
+import '../../features/vehicles/domain/usecases/get_user_vehicles_usecase.dart';
+import '../../features/vehicles/domain/usecases/set_default_vehicle_usecase.dart';
+import '../../features/vehicles/domain/usecases/update_vehicle_usecase.dart';
+import '../../features/vehicles/presentation/providers/vehicle_provider.dart';
+
+import '../../features/favorites/data/datasources/favorite_remote_datasource.dart';
+import '../../features/favorites/data/repositories/favorite_repository_impl.dart';
+import '../../features/favorites/domain/repositories/favorite_repository.dart';
+import '../../features/favorites/domain/usecases/get_favorites_usecase.dart';
+import '../../features/favorites/domain/usecases/remove_favorite_usecase.dart';
+import '../../features/favorites/domain/usecases/toggle_favorite_usecase.dart';
+import '../../features/favorites/presentation/providers/favorite_provider.dart';
+
 /// Point unique de câblage manuel des dépendances.
 ///
 /// Les dépendances sont construites selon le schéma :
@@ -186,6 +211,62 @@ class Injector {
         repository,
       ),
       repository: repository,
+    );
+  }
+
+  // ============================================================
+  // TRAJETS
+  // ============================================================
+
+  static TripProvider createTripProvider() {
+    final repository = TripRepositoryImpl(
+      remoteDataSource: TripRemoteDataSource(
+        firestore: FirebaseFirestore.instance,
+      ),
+    );
+
+    return TripProvider(
+      publishTripUseCase: PublishTripUseCase(repository),
+      searchTripsUseCase: SearchTripsUseCase(repository),
+      getTripHistoryUseCase: GetTripHistoryUseCase(repository),
+    );
+  }
+
+  // ============================================================
+  // VÉHICULES
+  // ============================================================
+
+  static VehicleProvider createVehicleProvider() {
+    final VehicleRepository repository = VehicleRepositoryImpl(
+      remoteDataSource: VehicleRemoteDataSource(
+        firestore: FirebaseFirestore.instance,
+      ),
+    );
+
+    return VehicleProvider(
+      getUserVehiclesUseCase: GetUserVehiclesUseCase(repository),
+      addVehicleUseCase: AddVehicleUseCase(repository),
+      updateVehicleUseCase: UpdateVehicleUseCase(repository),
+      deleteVehicleUseCase: DeleteVehicleUseCase(repository),
+      setDefaultVehicleUseCase: SetDefaultVehicleUseCase(repository),
+    );
+  }
+
+  // ============================================================
+  // FAVORIS
+  // ============================================================
+
+  static FavoriteProvider createFavoriteProvider() {
+    final FavoriteRepository repository = FavoriteRepositoryImpl(
+      remoteDataSource: FavoriteRemoteDataSource(
+        firestore: FirebaseFirestore.instance,
+      ),
+    );
+
+    return FavoriteProvider(
+      getFavoritesUseCase: GetFavoritesUseCase(repository),
+      toggleFavoriteUseCase: ToggleFavoriteUseCase(repository),
+      removeFavoriteUseCase: RemoveFavoriteUseCase(repository),
     );
   }
 }

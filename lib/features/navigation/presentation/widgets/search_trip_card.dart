@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
 
@@ -60,6 +61,28 @@ class _SearchTripCardState
         selectedDate = date;
       });
     }
+  }
+
+  void _searchTrips() {
+    final departure = departureController.text.trim();
+    final arrival = arrivalController.text.trim();
+    final date =
+        '${selectedDate.year.toString().padLeft(4, '0')}-'
+        '${selectedDate.month.toString().padLeft(2, '0')}-'
+        '${selectedDate.day.toString().padLeft(2, '0')}';
+
+    final uri = Uri(
+      path: '/trips/search',
+      queryParameters: {
+        if (departure.isNotEmpty) 'departure': departure,
+        if (arrival.isNotEmpty) 'arrival': arrival,
+        'date': date,
+        'passengers': '$passengers',
+      },
+    );
+
+    context.push(uri.toString());
+    widget.onSearch?.call();
   }
 
   void _swapLocations() {
@@ -350,7 +373,7 @@ class _SearchTripCardState
               width: double.infinity,
               height: 64,
               child: ElevatedButton.icon(
-                onPressed: widget.onSearch,
+                onPressed: _searchTrips,
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
                   AppColors.primary,

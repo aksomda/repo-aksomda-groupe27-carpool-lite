@@ -241,6 +241,13 @@ class AppDrawer extends StatelessWidget {
 
                   _menuItem(
                     context,
+                    icon: Icons.favorite,
+                    label: 'Mes favoris',
+                    route: '/favorites',
+                  ),
+
+                  _menuItem(
+                    context,
                     icon: Icons.notifications,
                     label: 'Notifications',
                     route: '/notifications',

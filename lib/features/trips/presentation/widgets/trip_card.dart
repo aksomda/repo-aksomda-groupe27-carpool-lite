@@ -13,6 +13,10 @@ class TripCard extends StatelessWidget {
   final String date;
   final VoidCallback? onTap;
 
+  /// Widget optionnel affiché en haut à droite de la carte
+  /// (utilisé pour le bouton « favori »).
+  final Widget? trailing;
+
   const TripCard({
     super.key,
     required this.tripId,
@@ -26,6 +30,7 @@ class TripCard extends StatelessWidget {
     required this.rating,
     required this.date,
     this.onTap,
+    this.trailing,
   });
 
   @override
@@ -75,12 +80,18 @@ class TripCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Text(
-                    '${price.toStringAsFixed(0)} FCFA',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${price.toStringAsFixed(0)} FCFA',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (trailing != null) trailing!,
+                    ],
                   ),
                 ],
               ),

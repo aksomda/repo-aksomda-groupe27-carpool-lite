@@ -37,7 +37,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
-    user = widget.authProvider.user!;
+    // `user` est déjà déclaré nullable : le `!` faisait planter l'écran
+    // d'accueil (exception au build) au lieu d'afficher un état vide
+    // lorsque la session n'était pas encore restaurée.
+    user = widget.authProvider.user;
     super.initState();
   }
 
@@ -198,6 +201,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           label: 'Véhicules',
                           color: AppColors.quickBlue,
                           onTap: () => context.go('/vehicles'),
+                        ),
+                        QuickAccessItem(
+                          icon: Icons.favorite_rounded,
+                          label: 'Mes\nfavoris',
+                          color: AppColors.quickGreen,
+                          onTap: () => context.go('/favorites'),
                         ),
                         QuickAccessItem(
                           icon: Icons.bar_chart_rounded,
