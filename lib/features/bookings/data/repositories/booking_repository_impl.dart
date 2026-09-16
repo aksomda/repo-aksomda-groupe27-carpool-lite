@@ -75,4 +75,14 @@ class BookingRepositoryImpl
       driverId: driverId,
     );
   }
+
+  @override
+  Stream<List<RideRequestEntity>>
+      getUserRequests({
+    required String passengerId,
+  }) {
+    return remoteDataSource.getUserRequests(
+      passengerId: passengerId,
+    );
+  }
 }

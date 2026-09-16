@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../bookings/presentation/providers/booking_provider.dart';
 import '../widgets/seat_counter.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final String tripId;
+  final String driverId;
   final String driverName;
   final String departure;
   final String arrival;
@@ -14,9 +17,15 @@ class TripDetailScreen extends StatefulWidget {
   final double price;
   final double rating;
 
+  /// Provider + identité du passager connecté, nécessaires pour soumettre
+  /// une demande de réservation sur ce trajet.
+  final BookingProvider bookingProvider;
+  final String passengerId;
+
   const TripDetailScreen({
     super.key,
     required this.tripId,
+    required this.driverId,
     required this.driverName,
     required this.departure,
     required this.arrival,
@@ -26,6 +35,8 @@ class TripDetailScreen extends StatefulWidget {
     required this.availableSeats,
     required this.price,
     required this.rating,
+    required this.bookingProvider,
+    required this.passengerId,
   });
 
   @override
@@ -36,8 +47,68 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   int numberOfSeats = 1;
 
   @override
+  void initState() {
+    super.initState();
+
+    widget.bookingProvider.addListener(_onProviderChanged);
+  }
+
+  void _onProviderChanged() {
+    if (!mounted) return;
+
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.bookingProvider.removeListener(_onProviderChanged);
+    super.dispose();
+  }
+
+  Future<void> _requestBooking() async {
+    if (widget.availableSeats <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ce trajet ne dispose plus de places disponibles.'),
+        ),
+      );
+      return;
+    }
+
+    final totalPrice = widget.price * numberOfSeats;
+
+    await widget.bookingProvider.requestBooking(
+      tripId: widget.tripId,
+      passengerId: widget.passengerId,
+      driverId: widget.driverId,
+      numberOfSeats: numberOfSeats,
+      totalPrice: totalPrice,
+    );
+
+    if (!mounted) return;
+
+    final provider = widget.bookingProvider;
+    final message = provider.errorMessage ?? provider.successMessage;
+
+    if (message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+
+    if (provider.errorMessage == null) {
+      // Demande envoyée avec succès : on redirige vers "Mes réservations"
+      // pour que le passager suive le statut ("En attente") de sa demande.
+      if (context.mounted) {
+        context.go('/bookings');
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final totalPrice = widget.price * numberOfSeats;
+    final isSending = widget.bookingProvider.isLoading;
 
     return Scaffold(
       appBar: AppBar(
@@ -70,18 +141,20 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 5),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(widget.rating.toString()),
-                            ],
-                          ),
+                          if (widget.rating > 0) ...[
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(widget.rating.toString()),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -162,15 +235,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
 
             const SizedBox(height: 15),
 
-            SeatCounter(
-              initialValue: numberOfSeats,
-              maxValue: widget.availableSeats,
-              onChanged: (value) {
-                setState(() {
-                  numberOfSeats = value;
-                });
-              },
-            ),
+            if (widget.availableSeats > 0)
+              SeatCounter(
+                initialValue: numberOfSeats,
+                maxValue: widget.availableSeats,
+                onChanged: (value) {
+                  setState(() {
+                    numberOfSeats = value;
+                  });
+                },
+              ),
 
             const SizedBox(height: 25),
 
@@ -188,7 +262,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       ),
                     ),
                     Text(
-                      '${totalPrice.toStringAsFixed(0)} FCFA',
+                      '${totalPrice.toStringAsFixed(0)} GNF',
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -205,22 +279,27 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Demande de réservation en préparation.',
+                onPressed: (isSending || widget.availableSeats <= 0)
+                    ? null
+                    : _requestBooking,
+                child: isSending
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        widget.availableSeats <= 0
+                            ? 'Complet'
+                            : 'Réserver ce trajet',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'Réserver ce trajet',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
               ),
             ),
           ],

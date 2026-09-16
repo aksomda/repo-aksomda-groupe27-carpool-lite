@@ -44,6 +44,15 @@ import '../../features/bookings/domain/usecases/reject_booking_request_usecase.d
 import '../../features/bookings/domain/usecases/cancel_booking_usecase.dart';
 import '../../features/bookings/presentation/providers/booking_provider.dart';
 
+import '../../features/trips/data/datasources/trip_remote_datasource.dart';
+import '../../features/trips/data/repositories/trip_repository_impl.dart';
+import '../../features/trips/domain/repositories/trip_repository.dart';
+import '../../features/trips/domain/usecases/publish_trip_usecase.dart';
+import '../../features/trips/domain/usecases/search_trips_usecase.dart';
+import '../../features/trips/domain/usecases/get_trip_history_usecase.dart';
+import '../../features/trips/domain/usecases/update_available_seats_usecase.dart';
+import '../../features/trips/presentation/providers/trip_provider.dart';
+
 /// Point unique de câblage manuel des dépendances.
 ///
 /// Les dépendances sont construites selon le schéma :
@@ -186,6 +195,28 @@ class Injector {
         repository,
       ),
       repository: repository,
+    );
+  }
+
+  // ============================================================
+  // TRAJETS
+  // ============================================================
+
+  static TripProvider createTripProvider() {
+    final remoteDataSource = TripRemoteDataSource(
+      firestore: FirebaseFirestore.instance,
+    );
+
+    final TripRepository repository = TripRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+    );
+
+    return TripProvider(
+      publishTripUseCase: PublishTripUseCase(repository),
+      searchTripsUseCase: SearchTripsUseCase(repository),
+      getTripHistoryUseCase: GetTripHistoryUseCase(repository),
+      updateAvailableSeatsUseCase:
+          UpdateAvailableSeatsUseCase(repository),
     );
   }
 }

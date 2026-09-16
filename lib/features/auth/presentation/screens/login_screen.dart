@@ -273,6 +273,14 @@ Center(
                               tooltip: _obscurePassword
                                   ? 'Afficher le mot de passe'
                                   : 'Masquer le mot de passe',
+                              // La taille tactile minimale par défaut d'un
+                              // IconButton (48x48) dépasse la hauteur
+                              // disponible dans le suffixIcon du champ, ce
+                              // qui provoquait un "RenderFlex overflowed on
+                              // the bottom" : on la retire explicitement.
+                              constraints: const BoxConstraints(),
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
                               icon: Icon(
                                 _obscurePassword
                                     ? Icons.visibility_outlined

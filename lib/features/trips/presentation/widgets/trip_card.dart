@@ -60,18 +60,20 @@ class TripCard extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.star,
-                              size: 17,
-                              color: Colors.amber,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(rating.toString()),
-                          ],
-                        ),
+                        if (rating > 0) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                size: 17,
+                                color: Colors.amber,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(rating.toString()),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),

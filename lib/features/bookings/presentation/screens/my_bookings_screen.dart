@@ -5,6 +5,7 @@ import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../providers/booking_provider.dart';
 import '../widgets/booking_card.dart';
 import '../../domain/entities/booking_entity.dart';
+import '../../domain/entities/ride_request_entity.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   final BookingProvider bookingProvider;
@@ -26,6 +27,10 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     super.initState();
 
     widget.bookingProvider.listenToUserBookings(
+      passengerId: widget.passengerId,
+    );
+
+    widget.bookingProvider.listenToUserRequests(
       passengerId: widget.passengerId,
     );
 
@@ -68,43 +73,61 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _buildBody(BookingProvider provider) {
-    if (provider.errorMessage != null &&
-        provider.userBookings.isEmpty) {
+    final bookings = provider.userBookings;
+    // Demandes pas encore acceptées ("en attente") ou refusées : une
+    // demande confirmée est déjà représentée par une BookingEntity
+    // ci-dessus, donc pas de doublon.
+    final pendingRequests = provider.userPendingRequests;
+
+    final isEmpty = bookings.isEmpty && pendingRequests.isEmpty;
+
+    if (provider.errorMessage != null && isEmpty) {
       return _ErrorView(
         message: provider.errorMessage!,
-        onRetry: () {
-          provider.listenToUserBookings(
-            passengerId: widget.passengerId,
-          );
-        },
+        onRetry: () => _refresh(provider),
       );
     }
 
-    if (provider.userBookings.isEmpty) {
+    if (isEmpty) {
       return const _EmptyBookingsView();
     }
 
+    final items = <_BookingListItem>[
+      ...bookings.map(_BookingListItem.booking),
+      ...pendingRequests.map(_BookingListItem.request),
+    ]..sort((a, b) => b.date.compareTo(a.date));
+
     return RefreshIndicator(
-      onRefresh: () async {
-        provider.listenToUserBookings(
-          passengerId: widget.passengerId,
-        );
-      },
+      onRefresh: () async => _refresh(provider),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: provider.userBookings.length,
+        itemCount: items.length,
         itemBuilder: (context, index) {
-          final booking = provider.userBookings[index];
+          final item = items[index];
+          final booking = item.booking;
 
-          return BookingCard.fromBooking(
-            booking: booking,
-            onCancel: booking.status == BookingStatus.confirmed ||
-                    booking.status == BookingStatus.pending
-                ? () => _cancelBooking(booking.id, booking.tripId)
-                : null,
-          );
+          if (booking != null) {
+            return BookingCard.fromBooking(
+              booking: booking,
+              onCancel: booking.status == BookingStatus.confirmed
+                  ? () => _cancelBooking(booking.id, booking.tripId)
+                  : null,
+            );
+          }
+
+          return BookingCard.fromRequest(request: item.request!);
         },
       ),
+    );
+  }
+
+  void _refresh(BookingProvider provider) {
+    provider.listenToUserBookings(
+      passengerId: widget.passengerId,
+    );
+
+    provider.listenToUserRequests(
+      passengerId: widget.passengerId,
     );
   }
 
@@ -155,6 +178,26 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       );
     }
   }
+}
+
+/// Élément d'affichage unifié pour "Mes réservations" : soit une
+/// réservation confirmée (BookingEntity), soit une demande pas encore
+/// traitée ou refusée (RideRequestEntity), triées ensemble par date.
+class _BookingListItem {
+  final BookingEntity? booking;
+  final RideRequestEntity? request;
+
+  const _BookingListItem._({this.booking, this.request});
+
+  factory _BookingListItem.booking(BookingEntity booking) {
+    return _BookingListItem._(booking: booking);
+  }
+
+  factory _BookingListItem.request(RideRequestEntity request) {
+    return _BookingListItem._(request: request);
+  }
+
+  DateTime get date => booking?.reservationDate ?? request!.createdAt;
 }
 
 class _EmptyBookingsView extends StatelessWidget {

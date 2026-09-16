@@ -32,9 +32,11 @@ class BookingProvider extends ChangeNotifier {
 
   List<BookingEntity> _userBookings = [];
   List<RideRequestEntity> _driverRequests = [];
+  List<RideRequestEntity> _userRequests = [];
 
   StreamSubscription<List<BookingEntity>>? _bookingsSubscription;
   StreamSubscription<List<RideRequestEntity>>? _requestsSubscription;
+  StreamSubscription<List<RideRequestEntity>>? _userRequestsSubscription;
 
   bool get isLoading => _isLoading;
 
@@ -45,6 +47,15 @@ class BookingProvider extends ChangeNotifier {
   List<BookingEntity> get userBookings => _userBookings;
 
   List<RideRequestEntity> get driverRequests => _driverRequests;
+
+  /// Demandes du passager qui n'ont pas encore été acceptées (ou qui ont
+  /// été refusées) : une demande confirmée devient une BookingEntity et
+  /// apparaît via [userBookings], elle n'est donc pas dupliquée ici.
+  List<RideRequestEntity> get userPendingRequests => _userRequests
+      .where(
+        (request) => request.status != BookingStatus.confirmed,
+      )
+      .toList();
 
   Future<void> requestBooking({
     required String tripId,
@@ -144,6 +155,34 @@ class BookingProvider extends ChangeNotifier {
         .listen(
           (bookings) {
             _userBookings = bookings;
+            // Une lecture réussie efface une éventuelle erreur précédente
+            // (ex. index Firestore manquant lors d'un essai antérieur) :
+            // sans ça, l'écran resterait bloqué sur le message d'erreur
+            // au lieu d'afficher "Aucune réservation" une fois la liste
+            // (à nouveau) vide.
+            _errorMessage = null;
+            notifyListeners();
+          },
+          onError: (error) {
+            _errorMessage = _cleanError(error);
+            notifyListeners();
+          },
+        );
+  }
+
+  void listenToUserRequests({
+    required String passengerId,
+  }) {
+    _userRequestsSubscription?.cancel();
+
+    _userRequestsSubscription = repository
+        .getUserRequests(
+          passengerId: passengerId,
+        )
+        .listen(
+          (requests) {
+            _userRequests = requests;
+            _errorMessage = null;
             notifyListeners();
           },
           onError: (error) {
@@ -165,6 +204,7 @@ class BookingProvider extends ChangeNotifier {
         .listen(
           (requests) {
             _driverRequests = requests;
+            _errorMessage = null;
             notifyListeners();
           },
           onError: (error) {
@@ -203,6 +243,7 @@ class BookingProvider extends ChangeNotifier {
   void dispose() {
     _bookingsSubscription?.cancel();
     _requestsSubscription?.cancel();
+    _userRequestsSubscription?.cancel();
     super.dispose();
   }
 }

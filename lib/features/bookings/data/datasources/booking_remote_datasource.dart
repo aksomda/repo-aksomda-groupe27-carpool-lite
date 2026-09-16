@@ -83,15 +83,10 @@ class BookingRemoteDataSource {
           );
         }
 
-        // On réserve les places immédiatement.
-        transaction.update(
-          tripReference,
-          {
-            'availableSeats':
-                availableSeats - numberOfSeats,
-          },
-        );
-
+        // NB : les places ne sont PAS déduites ici. Une demande "en attente"
+        // ne réserve rien ; le trajet reste consultable/disponible pour
+        // d'autres passagers tant que le conducteur n'a pas accepté (voir
+        // confirmBooking, qui fait la déduction réelle de façon atomique).
         request = RideRequestModel(
           id: requestReference.id,
           tripId: tripId,
@@ -146,6 +141,47 @@ class BookingRemoteDataSource {
             'Cette demande a déjà été traitée.',
           );
         }
+
+        // La déduction des places disponibles se fait ICI, au moment de
+        // l'acceptation, et non à la création de la demande. On relit le
+        // trajet dans la même transaction pour garantir la cohérence :
+        // si plusieurs demandes concurrentes dépassent la capacité
+        // restante, seules celles pour lesquelles il reste assez de places
+        // au moment de l'acceptation peuvent être confirmées.
+        final tripReference =
+            _tripReference(request.tripId);
+
+        final tripSnapshot =
+            await transaction.get(tripReference);
+
+        if (!tripSnapshot.exists) {
+          throw Exception(
+            'Le trajet est introuvable.',
+          );
+        }
+
+        final tripData = tripSnapshot.data()!;
+
+        final availableSeats =
+            (tripData['availableSeats'] as num?)
+                    ?.toInt() ??
+                0;
+
+        if (availableSeats < request.numberOfSeats) {
+          throw Exception(
+            'Il ne reste que $availableSeats place(s) disponible(s) : '
+            'impossible d’accepter cette demande de '
+            '${request.numberOfSeats} place(s).',
+          );
+        }
+
+        transaction.update(
+          tripReference,
+          {
+            'availableSeats':
+                availableSeats - request.numberOfSeats,
+          },
+        );
 
         final bookingReference =
             _bookingsCollection(
@@ -217,53 +253,9 @@ class BookingRemoteDataSource {
           );
         }
 
-        final tripReference =
-            _tripReference(request.tripId);
-
-        final tripSnapshot =
-            await transaction.get(
-          tripReference,
-        );
-
-        if (!tripSnapshot.exists) {
-          throw Exception(
-            'Le trajet est introuvable.',
-          );
-        }
-
-        final tripData =
-            tripSnapshot.data()!;
-
-        final availableSeats =
-            (tripData['availableSeats'] as num?)
-                    ?.toInt() ??
-                0;
-
-        final totalSeats =
-            (tripData['totalSeats'] as num?)
-                    ?.toInt() ??
-                availableSeats;
-
-        final newAvailableSeats =
-            availableSeats +
-                request.numberOfSeats;
-
-        if (newAvailableSeats > totalSeats) {
-          throw Exception(
-            'Erreur lors de la restitution des places.',
-          );
-        }
-
-        // On rend les places disponibles.
-        transaction.update(
-          tripReference,
-          {
-            'availableSeats':
-                newAvailableSeats,
-          },
-        );
-
-        // La demande devient annulée.
+        // Un rejet ne modifie jamais le nombre de places disponibles du
+        // trajet : la demande "en attente" n'en avait déduit aucune (voir
+        // requestBooking), il n'y a donc rien à restituer ici.
         transaction.update(
           requestReference,
           {
@@ -412,6 +404,35 @@ class BookingRemoteDataSource {
         .where(
           'driverId',
           isEqualTo: driverId,
+        )
+        .orderBy(
+          'createdAt',
+          descending: true,
+        )
+        .snapshots()
+        .map(
+          (snapshot) {
+            return snapshot.docs
+                .map(
+                  RideRequestModel.fromFirestore,
+                )
+                .toList();
+          },
+        );
+  }
+
+  // ============================================================
+  // DEMANDES DU PASSAGER (pour suivi avant acceptation)
+  // ============================================================
+
+  Stream<List<RideRequestModel>>
+      getUserRequests({
+    required String passengerId,
+  }) {
+    return _requestsCollection
+        .where(
+          'passengerId',
+          isEqualTo: passengerId,
         )
         .orderBy(
           'createdAt',

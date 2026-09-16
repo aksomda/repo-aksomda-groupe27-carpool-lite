@@ -4,9 +4,15 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../../../core/di/injector.dart';
 import '../../../navigation/presentation/widgets/app_drawer.dart';
+import '../providers/trip_provider.dart';
 
 class PublishTripScreen extends StatefulWidget {
-  const PublishTripScreen({super.key});
+  final TripProvider tripProvider;
+
+  const PublishTripScreen({
+    super.key,
+    required this.tripProvider,
+  });
 
   @override
   State<PublishTripScreen> createState() => _PublishTripScreenState();
@@ -33,12 +39,28 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
   bool _isLoadingLocation = false;
 
   @override
+  void initState() {
+    super.initState();
+
+    widget.tripProvider.addListener(_onProviderChanged);
+  }
+
+  void _onProviderChanged() {
+    if (!mounted) return;
+
+    setState(() {});
+  }
+
+  @override
   void dispose() {
+    widget.tripProvider.removeListener(_onProviderChanged);
     _departureController.dispose();
     _arrivalController.dispose();
     _priceController.dispose();
     super.dispose();
   }
+
+  TripProvider get _tripProvider => widget.tripProvider;
 
   // ============================================================
   // LOCALISATION
@@ -209,7 +231,7 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
   // PUBLICATION
   // ============================================================
 
-  void _publishTrip() {
+  Future<void> _publishTrip() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -260,58 +282,43 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
     }
 
     // ==========================================================
-    // DONNEES DU TRAJET
+    // ENREGISTREMENT DU TRAJET DANS FIRESTORE
     // ==========================================================
 
-    debugPrint('========================================');
-    debugPrint('PUBLICATION DU TRAJET');
-    debugPrint('========================================');
+    final driverId = Injector.authProvider.user?.uid;
 
-    debugPrint(
-      'Départ : ${_departureController.text}',
+    if (driverId == null || driverId.isEmpty) {
+      _showMessage(
+        'Vous devez être connecté pour publier un trajet.',
+      );
+      return;
+    }
+
+    final trip = await _tripProvider.publishTrip(
+      driverId: driverId,
+      departure: _departureController.text,
+      arrival: _arrivalController.text,
+      departureLatitude: _departurePosition!.latitude,
+      departureLongitude: _departurePosition!.longitude,
+      arrivalLatitude: _arrivalPosition!.latitude,
+      arrivalLongitude: _arrivalPosition!.longitude,
+      departureDateTime: departureDateTime,
+      pricePerSeat: price,
+      totalSeats: _totalSeats,
     );
 
-    debugPrint(
-      'Arrivée : ${_arrivalController.text}',
-    );
+    if (!mounted) return;
 
-    debugPrint(
-      'Prix : $price',
-    );
+    final message =
+        _tripProvider.errorMessage ?? _tripProvider.successMessage;
 
-    debugPrint(
-      'Places : $_totalSeats',
-    );
+    if (message != null) {
+      _showMessage(message);
+    }
 
-    debugPrint(
-      'Date : $departureDateTime',
-    );
-
-    debugPrint(
-      'Départ latitude : '
-      '${_departurePosition!.latitude}',
-    );
-
-    debugPrint(
-      'Départ longitude : '
-      '${_departurePosition!.longitude}',
-    );
-
-    debugPrint(
-      'Arrivée latitude : '
-      '${_arrivalPosition!.latitude}',
-    );
-
-    debugPrint(
-      'Arrivée longitude : '
-      '${_arrivalPosition!.longitude}',
-    );
-
-    debugPrint('========================================');
-
-    _showMessage(
-      'Trajet prêt à être publié.',
-    );
+    if (trip != null) {
+      Navigator.of(context).pop(trip);
+    }
   }
 
   // ============================================================
@@ -764,13 +771,25 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
-                  onPressed: _publishTrip,
-                  icon: const Icon(
-                    Icons.directions_car,
-                  ),
-                  label: const Text(
-                    'Publier le trajet',
-                    style: TextStyle(
+                  onPressed:
+                      _tripProvider.isPublishing ? null : _publishTrip,
+                  icon: _tripProvider.isPublishing
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.directions_car,
+                        ),
+                  label: Text(
+                    _tripProvider.isPublishing
+                        ? 'Publication...'
+                        : 'Publier le trajet',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),

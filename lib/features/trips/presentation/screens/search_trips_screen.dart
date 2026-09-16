@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/di/injector.dart';
 import '../../../navigation/presentation/widgets/app_drawer.dart';
+import '../../../profile/domain/usecases/get_profile_usecase.dart';
+import '../../domain/entities/trip_entity.dart';
+import '../providers/trip_provider.dart';
 import '../widgets/trip_card.dart';
 import 'trip_detail_screen.dart';
 
 class SearchTripsScreen extends StatefulWidget {
+  final TripProvider tripProvider;
+
   const SearchTripsScreen({
     super.key,
+    required this.tripProvider,
   });
 
   @override
@@ -21,75 +27,44 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
   final TextEditingController arrivalController =
       TextEditingController();
 
-  String? selectedDate;
+  DateTime? selectedDate;
 
-  final List<Map<String, dynamic>> trips = [
-    {
-      'id': 'trip_001',
-      'driverName': 'Chantal M.',
-      'departure': 'Université Nongo Conakry',
-      'arrival': 'Kaloum',
-      'departureTime': '07:30',
-      'duration': '2h10',
-      'availableSeats': 4,
-      'price': 1500.0,
-      'rating': 4.8,
-      'date': 'Aujourd’hui',
-    },
-    {
-      'id': 'trip_002',
-      'driverName': 'Kevin T.',
-      'departure': 'Sonfonia',
-      'arrival': 'Kaloum',
-      'departureTime': '08:00',
-      'duration': '2h00',
-      'availableSeats': 3,
-      'price': 1200.0,
-      'rating': 4.6,
-      'date': 'Aujourd’hui',
-    },
-    {
-      'id': 'trip_003',
-      'driverName': 'Sandra B.',
-      'departure': 'Lambanyi',
-      'arrival': 'Université Gamal Abdel Nasser',
-      'departureTime': '08:15',
-      'duration': '2h30',
-      'availableSeats': 4,
-      'price': 1500.0,
-      'rating': 4.9,
-      'date': 'Aujourd’hui',
-    },
-  ];
+  final GetProfileUseCase _getProfileUseCase =
+      Injector.createProfileProvider().getProfileUseCase;
 
-  List<Map<String, dynamic>> get filteredTrips {
-    final departure = departureController.text.trim().toLowerCase();
-    final arrival = arrivalController.text.trim().toLowerCase();
+  final Map<String, Future<String>> _driverNames = {};
 
-    return trips.where((trip) {
-      final tripDeparture =
-          trip['departure'].toString().toLowerCase();
+  @override
+  void initState() {
+    super.initState();
 
-      final tripArrival =
-          trip['arrival'].toString().toLowerCase();
+    widget.tripProvider.addListener(_onProviderChanged);
+    widget.tripProvider.searchTrips();
+  }
 
-      final departureMatches =
-          departure.isEmpty ||
-          tripDeparture.contains(departure);
+  void _onProviderChanged() {
+    if (!mounted) return;
 
-      final arrivalMatches =
-          arrival.isEmpty ||
-          tripArrival.contains(arrival);
-
-      return departureMatches && arrivalMatches;
-    }).toList();
+    setState(() {});
   }
 
   @override
   void dispose() {
+    widget.tripProvider.removeListener(_onProviderChanged);
     departureController.dispose();
     arrivalController.dispose();
     super.dispose();
+  }
+
+  Future<String> _driverName(String driverId) {
+    return _driverNames.putIfAbsent(driverId, () async {
+      try {
+        final profile = await _getProfileUseCase(driverId);
+        return profile.name;
+      } catch (_) {
+        return 'Conducteur';
+      }
+    });
   }
 
   Future<void> _selectDate() async {
@@ -109,43 +84,66 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
     }
 
     setState(() {
-      selectedDate =
-          '${pickedDate.day.toString().padLeft(2, '0')}/'
-          '${pickedDate.month.toString().padLeft(2, '0')}/'
-          '${pickedDate.year}';
+      selectedDate = pickedDate;
     });
   }
 
   void _search() {
-    setState(() {});
+    widget.tripProvider.searchTrips(
+      departure: departureController.text,
+      arrival: arrivalController.text,
+      date: selectedDate,
+    );
   }
 
-  void _openTrip(Map<String, dynamic> trip) {
+  void _openTrip(TripEntity trip, String driverName) {
+    final user = Injector.authProvider.user;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vous devez être connecté pour réserver un trajet.'),
+        ),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => TripDetailScreen(
-          tripId: trip['id'].toString(),
-          driverName: trip['driverName'].toString(),
-          departure: trip['departure'].toString(),
-          arrival: trip['arrival'].toString(),
-          date: selectedDate ?? trip['date'].toString(),
-          departureTime: trip['departureTime'].toString(),
-          duration: trip['duration'].toString(),
-          availableSeats:
-              (trip['availableSeats'] as num).toInt(),
-          price:
-              (trip['price'] as num).toDouble(),
-          rating:
-              (trip['rating'] as num).toDouble(),
+          tripId: trip.id,
+          driverId: trip.driverId,
+          driverName: driverName,
+          departure: trip.departure,
+          arrival: trip.arrival,
+          date: _formatDate(trip.departureDateTime),
+          departureTime: _formatTime(trip.departureDateTime),
+          duration: '—',
+          availableSeats: trip.availableSeats,
+          price: trip.pricePerSeat,
+          rating: 0,
+          bookingProvider: Injector.createBookingProvider(),
+          passengerId: user.uid,
         ),
       ),
     );
   }
 
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
+
+  String _formatTime(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final displayedTrips = filteredTrips;
+    final trips = widget.tripProvider.searchResults;
 
     return Scaffold(
       drawer: AppDrawer(authProvider: Injector.authProvider),
@@ -203,7 +201,9 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
                           Icons.calendar_today,
                         ),
                         label: Text(
-                          selectedDate ?? 'Choisir une date',
+                          selectedDate == null
+                              ? 'Choisir une date'
+                              : _formatDate(selectedDate!),
                         ),
                       ),
                     ),
@@ -223,50 +223,61 @@ class _SearchTripsScreenState extends State<SearchTripsScreen> {
 
           const Divider(height: 1),
 
-          // Liste des trajets
-          Expanded(
-            child: displayedTrips.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Aucun trajet trouvé.',
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: displayedTrips.length,
-                    itemBuilder: (context, index) {
-                      final trip = displayedTrips[index];
-
-                      return TripCard(
-                        tripId: trip['id'].toString(),
-                        driverName:
-                            trip['driverName'].toString(),
-                        departure:
-                            trip['departure'].toString(),
-                        arrival:
-                            trip['arrival'].toString(),
-                        departureTime:
-                            trip['departureTime'].toString(),
-                        duration:
-                            trip['duration'].toString(),
-                        availableSeats:
-                            (trip['availableSeats'] as num)
-                                .toInt(),
-                        price:
-                            (trip['price'] as num).toDouble(),
-                        rating:
-                            (trip['rating'] as num).toDouble(),
-                        date:
-                            selectedDate ??
-                            trip['date'].toString(),
-                        onTap: () => _openTrip(trip),
-                      );
-                    },
+          if (widget.tripProvider.errorMessage != null && trips.isEmpty)
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    widget.tripProvider.errorMessage!,
+                    textAlign: TextAlign.center,
                   ),
-          ),
+                ),
+              ),
+            )
+          else
+            // Liste des trajets
+            Expanded(
+              child: trips.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Aucun trajet trouvé.',
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: trips.length,
+                      itemBuilder: (context, index) {
+                        final trip = trips[index];
+
+                        return FutureBuilder<String>(
+                          future: _driverName(trip.driverId),
+                          builder: (context, snapshot) {
+                            final driverName =
+                                snapshot.data ?? 'Conducteur';
+
+                            return TripCard(
+                              tripId: trip.id,
+                              driverName: driverName,
+                              departure: trip.departure,
+                              arrival: trip.arrival,
+                              departureTime:
+                                  _formatTime(trip.departureDateTime),
+                              duration: '—',
+                              availableSeats: trip.availableSeats,
+                              price: trip.pricePerSeat,
+                              rating: 0,
+                              date: _formatDate(trip.departureDateTime),
+                              onTap: () => _openTrip(trip, driverName),
+                            );
+                          },
+                        );
+                      },
+                    ),
+            ),
         ],
       ),
     );

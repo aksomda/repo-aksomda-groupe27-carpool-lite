@@ -401,7 +401,8 @@ class _LocationField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.only(right: 45),
-      height: 60,
+      constraints: const BoxConstraints(minHeight: 60),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
@@ -410,6 +411,12 @@ class _LocationField extends StatelessWidget {
         ),
       ),
       child: Row(
+        // Le contenu (titre + champ) doit pouvoir dépasser légèrement
+        // les 60px visés (ex. police système agrandie) sans provoquer
+        // de RenderFlex overflow : on remplace la hauteur fixe par une
+        // hauteur minimale, et la Row s'ajuste à la taille réelle de
+        // son contenu.
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const SizedBox(width: 15),
 
@@ -423,6 +430,7 @@ class _LocationField extends StatelessWidget {
 
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment:
               MainAxisAlignment.center,
               crossAxisAlignment:
@@ -486,9 +494,15 @@ class _InfoSelector extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 60,
+        // Une hauteur minimale (et non fixe) évite un RenderFlex
+        // "bottom overflowed" quand le titre + la valeur ont besoin
+        // d'un peu plus de place (ex. police système agrandie côté
+        // utilisateur) : le contenu peut alors pousser légèrement la
+        // carte au lieu de déborder silencieusement hors de sa boîte.
+        constraints: const BoxConstraints(minHeight: 60),
         padding: const EdgeInsets.symmetric(
           horizontal: 15,
+          vertical: 8,
         ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -498,6 +512,7 @@ class _InfoSelector extends StatelessWidget {
           ),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -509,6 +524,7 @@ class _InfoSelector extends StatelessWidget {
 
             Expanded(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment:
                 MainAxisAlignment.center,
                 crossAxisAlignment:

@@ -30,4 +30,8 @@ abstract class BookingRepository {
   Stream<List<RideRequestEntity>> getDriverRequests({
     required String driverId,
   });
+
+  Stream<List<RideRequestEntity>> getUserRequests({
+    required String passengerId,
+  });
 }

@@ -16,6 +16,7 @@ import '../../features/trips/presentation/screens/publish_trip_screen.dart';
 import '../../features/trips/presentation/screens/search_trips_screen.dart';
 import '../../features/trips/presentation/screens/trip_history_screen.dart';
 import '../../features/bookings/presentation/screens/my_bookings_screen.dart';
+import '../../features/bookings/presentation/screens/booking_requests_screen.dart';
 import '../../features/vehicles/presentation/screens/vehicle_list_screen.dart';
 import '../../features/reviews/presentation/screens/user_reviews_screen.dart';
 import '../../features/reviews/presentation/pages/create_review_page.dart';
@@ -93,17 +94,26 @@ final GoRouter appRouter = GoRouter(
 
     GoRoute(
       path: '/trips/publish',
-      builder: (_, _) => const PublishTripScreen(),
+      builder: (_, _) => PublishTripScreen(
+        tripProvider: Injector.createTripProvider(),
+      ),
     ),
     GoRoute(
       path: '/trips/search',
-      builder: (_, _) => const SearchTripsScreen(),
+      builder: (_, _) => SearchTripsScreen(
+        tripProvider: Injector.createTripProvider(),
+      ),
     ),
     GoRoute(
       path: '/trips/history',
       builder: (_, _) => const TripHistoryScreen(),
     ),
-    GoRoute(path: '/trips', builder: (_, _) => const SearchTripsScreen()),
+    GoRoute(
+      path: '/trips',
+      builder: (_, _) => SearchTripsScreen(
+        tripProvider: Injector.createTripProvider(),
+      ),
+    ),
 
     GoRoute(
       path: '/bookings',
@@ -126,6 +136,23 @@ final GoRouter appRouter = GoRouter(
               );
             },
           ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/bookings/requests',
+      builder: (_, _) {
+        final user = Injector.authProvider.user;
+
+        if (user == null) {
+          return const Scaffold(
+            body: Center(child: Text('Utilisateur non connecté')),
+          );
+        }
+
+        return BookingRequestsScreen(
+          bookingProvider: Injector.createBookingProvider(),
+          driverId: user.uid,
         );
       },
     ),

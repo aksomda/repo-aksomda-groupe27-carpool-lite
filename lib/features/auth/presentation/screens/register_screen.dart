@@ -1444,6 +1444,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
             tooltip: _obscurePassword
                 ? 'Afficher le mot de passe'
                 : 'Masquer le mot de passe',
+            // Cf. remarque dans login_screen.dart : sans ça, la taille
+            // tactile minimale par défaut (48x48) déborde du champ.
+            constraints: const BoxConstraints(),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
             icon: Icon(
               _obscurePassword
                   ? Icons.visibility_outlined
@@ -1469,6 +1474,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
             tooltip: _obscureConfirmPassword
                 ? 'Afficher le mot de passe'
                 : 'Masquer le mot de passe',
+            // Cf. remarque dans login_screen.dart : sans ça, la taille
+            // tactile minimale par défaut (48x48) déborde du champ.
+            constraints: const BoxConstraints(),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
             icon: Icon(
               _obscureConfirmPassword
                   ? Icons.visibility_outlined
