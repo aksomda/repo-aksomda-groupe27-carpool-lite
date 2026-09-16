@@ -7,6 +7,7 @@ import '../../domain/repositories/notification_repository.dart';
 import '../../domain/usecases/get_notifications.dart';
 import '../../domain/usecases/mark_notification_as_read.dart';
 import '../../domain/usecases/save_fcm_token.dart';
+import '../../domain/usecases/send_notification.dart';
 
 final notificationDataSourceProvider =
 Provider<FirebaseNotificationDataSource>((ref) {
@@ -41,6 +42,39 @@ Provider<SaveFcmToken>((ref) {
   return SaveFcmToken(
     ref.watch(notificationRepositoryProvider),
   );
+});
+
+final sendNotificationUseCaseProvider =
+Provider<SendNotification>((ref) {
+  return SendNotification(
+    ref.watch(notificationRepositoryProvider),
+  );
+});
+
+final sendNotificationProvider =
+Provider<Future<void> Function({
+  required String senderId,
+  required String receiverId,
+  required String title,
+  required String body,
+})>((ref) {
+  final useCase = ref.watch(
+    sendNotificationUseCaseProvider,
+  );
+
+  return ({
+    required String senderId,
+    required String receiverId,
+    required String title,
+    required String body,
+  }) {
+    return useCase(
+      senderId: senderId,
+      receiverId: receiverId,
+      title: title,
+      body: body,
+    );
+  };
 });
 
 final notificationsStreamProvider =

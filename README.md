@@ -1,4 +1,4 @@
-# repo_aksomda_groupe27_carpool_lite - Application de covoiturage des étudiants
+# repo_aksomda_groupe27_carpool_lite - Application de covoiturage des étudiants - CAR POOL LITE
 
 Application Flutter de covoiturage des étudiants.
 Le projet est organisé selon une approche **Feature-First + Clean Architecture** et
@@ -11,7 +11,7 @@ communique avec firebase.
 ### Authentification double facteur
 
 - Connexion par email et mot de passe.
-- Inscription avec nom, prénom, âge, téléphone, email et mot de passe.
+- Inscription avec nom, prénom, âge, téléphone, email et mot de passe et saisie des informations liées à l'inscription à une université et campus.
 - Stockage sécurisé de l'access token et du refresh token.
 - Injection automatique du JWT sur les routes protégées.
 - Rafraîchissement automatique du JWT lorsqu'une requête protégée reçoit un `401`.
@@ -23,11 +23,14 @@ communique avec firebase.
 
 1. Tableau de bord.
 2. Trajets.
-3. Véhicules.
-4. Evalution des conducteurs.
-5. Personnel / serveuses.
+3. Demande de réservations
+4. Véhicules.
+5. Evalution des conducteurs.
+6. Chat en direct
+7. Notifications
+8. Profil.
 
-Les cinq écrans métier consomment des données provenant de l'API et disposent d'une
+Les huit (08) écrans métier consomment des données provenant de firebase et disposent d'une
 stratégie de cache pour les lectures.
 
 
@@ -40,6 +43,10 @@ stratégie de cache pour les lectures.
 5. Gestion des classes.
 6. Trajets
 7. Véhicules
+8. Chat en direct
+9. Notification
+10. Profil
+11. Statistiques
 ---
 
 ## 2. Architecture
@@ -69,26 +76,26 @@ lib/
 │   │   ├── domain/
 │   │   └── data/
 │   │
-│  ├── campus/
-│  │  ├── presentation/
-│  │  ├── domain/
-│  │  └── data/
-│  │
-│  ├── ufrs/
-│  │  ├── presentation/
-│  │  ├── domain/
-│  │  └── data/
-│  │
-│  ├── formations/
-│  │  ├── presentation/
-│  │  ├── domain/
-│  │  └── data/
-│  │
-│  ├── levels/
-│  │  ├── presentation/
-│  │  ├── domain/
-│  │  └── data/
-│  │
+│   ├── campus/
+│   │  ├── presentation/
+│   │  ├── domain/
+│   │  └── data/
+│   │
+│   ├── ufrs/
+│   │    ├── presentation/
+│   │  ├── domain/
+│   │  └── data/
+│   │
+│   ├── formations/
+│   │  ├── presentation/
+│   │  ├── domain/
+│   │  └── data/
+│   │
+│   ├── levels/
+│   │  ├── presentation/
+│   │  ├── domain/
+│   │  └── data/
+│   │
 │   ├── profile/
 │   │   ├── presentation/
 │   │   ├── domain/
@@ -131,7 +138,7 @@ lib/
 │
 └── main.dart
 
-Chaque fonctionnalité métier suit autant que possible les trois couches suivantes :
+Chaque fonctionnalité métier suit autant que possible les trois (03) couches suivantes :
 
 ```text
 features/<feature>/
@@ -325,3 +332,76 @@ JSON**, et pour les endpoints `/api/sync/*`, ajoutez l'en-tête `x-api-key`
 dans l'onglet **Headers**. Un `Environment` Postman avec une variable
 `{{base_url}}` (= `http://localhost:4000`) et `{{sync_api_key}}` évite de
 tout réécrire à chaque requête.
+
+## 4. CAPTURE D'ECRAN DE L'APPLICATION ANDROID DE L'ESPACE ETUDIANT##
+
+### 4.1. PAGE D'INSCRIPTION
+Pour disposer d'un compte sur la plateforme CARPOOL LITE, l'étudiant a besoin de s'inscrire. Ainsi, à l'inscription, il va fournir ces informations personnels (nom complet, téléphone, sexe,)
+L'écran de l'étape 1
+![alt text](image-1.png)
+
+l'écran de l'étape 2
+![alt text](image-2.png)
+
+l'écran de l'étape 3
+![alt text](image-3.png)
+
+
+### 4.2. PAGE DE CONNEXION
+L'étudiant pourra accéder à son espace après une vérification et validation par l'administrateur
+![alt text](image.png)
+
+### 4.3. PAGE D'ACCUEIL DE L'ESPACE ETUDIANT
+![alt text](image-4.png)
+
+### 4.4. PUBLICATION D'UN TRAJET
+![alt text](image-7.png)
+
+### 4.5. RECHERCHE D'UN TRAJET
+![alt text](image-8.png)
+
+### 4.6. HISTORIQUE D'UN TRAJET
+![alt text](image-9.png)
+
+
+
+
+
+### 4.7. LISTE DES VEHICULES SAISIS
+![alt text](image-5.png)
+
+### 4.8. LISTE DES MESSAGES
+![alt text](image-11.png)
+
+### 4.9. AJOUT D'UN MESSAGE
+![alt text](image-10.png)
+
+### 4.10. STATISTIQUES
+![alt text](image-12.png)
+
+### 4.11. MON COMPTE
+![alt text](image-13.png)
+
+## 5. CAPTURE D'ECRAN DE L'APPLICATION ANDROID DE L'ESPACE ADMINISTRATEUR##
+
+### 5.1. PAGE DE CONNEXION
+L'étudiant pourra accéder à son espace après une vérification et validation par l'administrateur
+![alt text](image.png)
+
+### 5.2. PAGE D'ACCUEIL DE L'ADMINISTRATEUR
+![alt text](image-14.png)
+
+![alt text](image-15.png)
+
+![alt text](image-16.png)
+
+### 5.3. MENU DISPONIBLE POUR L'ADMINISTRATEUR
+![alt text](image-17.png)
+
+![alt text](image-18.png)
+
+### 5.4. LISTE DES UNIVERSITES
+![alt text](image-19.png)
+
+### 5.5. AJOUT D'UNE UNIVERSITE
+![alt text](image-20.png)

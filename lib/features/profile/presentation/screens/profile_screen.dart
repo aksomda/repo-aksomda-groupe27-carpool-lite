@@ -181,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onMenuTap: () =>
                             _scaffoldKey.currentState?.openDrawer(),
                         onSettingsTap: () {
-                          _comingSoon('Préférences bientôt disponibles.');
+                          context.push('/preferences');
                         },
                       ),
 
@@ -292,7 +292,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         title: 'Mes préférences',
                         subtitle: 'Notifications, langue, confidentialité',
                         onTap: () {
-                          _comingSoon('Préférences bientôt disponibles.');
+                          context.push('/preferences');
                         },
                       ),
 

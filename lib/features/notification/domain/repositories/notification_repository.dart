@@ -18,4 +18,11 @@ abstract class NotificationRepository {
     required String userId,
     required String token,
   });
+
+  Future<void> sendNotification({
+    required String senderId,
+    required String receiverId,
+    required String title,
+    required String body,
+  });
 }

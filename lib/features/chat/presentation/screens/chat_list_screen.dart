@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/widgets/user_picker_screen.dart';
+import '../../../auth/data/models/user_model.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 // import '../../../navigation/presentation/widgets/bottom_navigation.dart'; // masqué temporairement
@@ -63,6 +65,32 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     return days[date.weekday - 1];
   }
 
+  Future<void> _startNewConversation() async {
+    final selected = await Navigator.push<UserModel>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => UserPickerScreen(
+          title: 'Nouvelle conversation',
+          currentUserId: currentUser!.uid,
+        ),
+      ),
+    );
+
+    if (selected == null || !mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProviderScope(
+          child: ChatDetailScreen(
+            currentUserId: currentUser!.uid,
+            contactId: selected.uid,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(userMessagesProvider(currentUser!.uid));
@@ -70,6 +98,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FBFF),
       drawer: AppDrawer(authProvider: widget.authProvider),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _startNewConversation,
+        tooltip: 'Nouveau message',
+        child: const Icon(Icons.chat_bubble_outline),
+      ),
 
       body: SafeArea(
         child: Column(

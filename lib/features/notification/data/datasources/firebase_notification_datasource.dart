@@ -73,6 +73,24 @@ class FirebaseNotificationDataSource {
     await batch.commit();
   }
 
+  Future<void> sendNotification({
+    required String senderId,
+    required String receiverId,
+    required String title,
+    required String body,
+    String type = 'custom',
+  }) async {
+    await _notifications(receiverId).add({
+      'title': title,
+      'body': body,
+      'type': type,
+      'senderId': senderId,
+      'receiverId': receiverId,
+      'isRead': false,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> saveFcmToken({
     required String userId,
     required String token,

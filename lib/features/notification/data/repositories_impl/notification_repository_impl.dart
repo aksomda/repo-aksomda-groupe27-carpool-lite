@@ -51,4 +51,19 @@ class NotificationRepositoryImpl
       token: token,
     );
   }
+
+  @override
+  Future<void> sendNotification({
+    required String senderId,
+    required String receiverId,
+    required String title,
+    required String body,
+  }) {
+    return dataSource.sendNotification(
+      senderId: senderId,
+      receiverId: receiverId,
+      title: title,
+      body: body,
+    );
+  }
 }

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/injector.dart';
+import '../../../../core/widgets/user_picker_screen.dart';
+import '../../../auth/data/models/user_model.dart';
 import '../../../navigation/presentation/widgets/app_drawer.dart';
 import '../providers/notification_provider.dart';
+import 'compose_notification_screen.dart';
 
 class NotificationsScreen
     extends ConsumerWidget {
@@ -13,6 +16,34 @@ class NotificationsScreen
     super.key,
     required this.userId,
   });
+
+  Future<void> _composeNotification(
+    BuildContext context,
+    String userId,
+  ) async {
+    final selected = await Navigator.push<UserModel>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => UserPickerScreen(
+          title: 'Notifier un utilisateur',
+          currentUserId: userId,
+        ),
+      ),
+    );
+
+    if (selected == null || !context.mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ComposeNotificationScreen(
+          senderId: userId,
+          receiverId: selected.uid,
+          receiverName: selected.name,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(
@@ -39,6 +70,11 @@ class NotificationsScreen
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _composeNotification(context, userId),
+        icon: const Icon(Icons.add_alert_outlined),
+        label: const Text('Nouvelle notification'),
       ),
       body: notifications.when(
         loading: () => const Center(

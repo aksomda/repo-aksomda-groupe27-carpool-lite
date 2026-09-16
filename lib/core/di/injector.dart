@@ -53,6 +53,13 @@ import '../../features/trips/domain/usecases/get_trip_history_usecase.dart';
 import '../../features/trips/domain/usecases/update_available_seats_usecase.dart';
 import '../../features/trips/presentation/providers/trip_provider.dart';
 
+import '../../features/vehicles/data/datasources/vehicle_remote_datasource.dart';
+import '../../features/vehicles/data/repositories/vehicle_repository_impl.dart';
+import '../../features/vehicles/domain/repositories/vehicle_repository.dart';
+import '../../features/vehicles/domain/usecases/add_vehicle_usecase.dart';
+import '../../features/vehicles/domain/usecases/get_user_vehicles_usecase.dart';
+import '../../features/vehicles/presentation/providers/vehicle_provider.dart';
+
 /// Point unique de câblage manuel des dépendances.
 ///
 /// Les dépendances sont construites selon le schéma :
@@ -217,6 +224,25 @@ class Injector {
       getTripHistoryUseCase: GetTripHistoryUseCase(repository),
       updateAvailableSeatsUseCase:
           UpdateAvailableSeatsUseCase(repository),
+    );
+  }
+
+  // ============================================================
+  // VÉHICULES
+  // ============================================================
+
+  static VehicleProvider createVehicleProvider() {
+    final remoteDataSource = VehicleRemoteDataSource(
+      firestore: FirebaseFirestore.instance,
+    );
+
+    final VehicleRepository repository = VehicleRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+    );
+
+    return VehicleProvider(
+      addVehicleUseCase: AddVehicleUseCase(repository),
+      getUserVehiclesUseCase: GetUserVehiclesUseCase(repository),
     );
   }
 }

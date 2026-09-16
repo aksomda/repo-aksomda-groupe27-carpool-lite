@@ -156,7 +156,23 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
-    GoRoute(path: '/vehicles', builder: (_, _) => const VehicleListScreen()),
+    GoRoute(
+      path: '/vehicles',
+      builder: (_, _) {
+        final user = Injector.authProvider.user;
+
+        if (user == null) {
+          return const Scaffold(
+            body: Center(child: Text('Utilisateur non connecté')),
+          );
+        }
+
+        return VehicleListScreen(
+          vehicleProvider: Injector.createVehicleProvider(),
+          ownerId: user.uid,
+        );
+      },
+    ),
     GoRoute(
       path: '/chat',
       builder: (_, _) => ProviderScope(
