@@ -115,20 +115,17 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final int flex;
 
   const _NavItem({
     required this.icon,
     required this.label,
     required this.selected,
     required this.onTap,
-    this.flex = 1,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      flex: flex,
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,

@@ -12,6 +12,22 @@ import '../providers/profile_provider.dart';
 import '../widgets/profile_avatar.dart';
 import 'edit_profile_screen.dart';
 
+class ProfileColors {
+  static const primary = Color(0xFF1478F2);
+  static const darkBlue = Color(0xFF103875);
+  static const mediumBlue = Color(0xFF5272A8);
+  static const lightBlue = Color(0xFFEAF4FF);
+
+  static const green = Color(0xFF0BB59F);
+  static const yellow = Color(0xFFFFAA00);
+  static const purple = Color(0xFF6551D8);
+
+  static const background = Color(0xFFF7FBFF);
+  static const border = Color(0xFFE1ECFA);
+
+  static const red = Color(0xFFE94E4E);
+}
+
 class ProfileScreen extends StatefulWidget {
   final AuthProvider authProvider;
   final ProfileProvider profileProvider;
@@ -67,10 +83,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      final success = await widget.profileProvider.updatePhoto(
-        uid,
-        bytes,
-      );
+      final success = await widget.profileProvider.updatePhoto(uid, bytes);
 
       if (!mounted) {
         return;
@@ -89,18 +102,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      _comingSoon(
-        'Impossible de sélectionner la photo.',
-      );
+      _comingSoon('Impossible de sélectionner la photo.');
     }
   }
 
   void _comingSoon(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -114,22 +122,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(
-              dialogContext,
-              false,
-            ),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Annuler'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(
-              dialogContext,
-              true,
-            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text(
               'Se déconnecter',
-              style: TextStyle(
-                color: AppColors.error,
-              ),
+              style: TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -161,180 +161,144 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           body: SafeArea(
             child: isLoading && profile == null
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
+                ? const Center(child: CircularProgressIndicator())
                 : errorMessage != null && profile == null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            errorMessage,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      )
-                    : ListView(
-                        padding: const EdgeInsets.fromLTRB(
-                          20,
-                          12,
-                          20,
-                          110,
-                        ),
-                        children: [
-                          _ProfileHeader(
-                            onSettingsTap: () {
-                              _comingSoon(
-                                'Préférences bientôt disponibles.',
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          Center(
-                            child: _AvatarWithEditButton(
-                              name: profile?.name ?? '',
-                              photoUrl: profile?.photoUrl,
-                              isUploading: widget
-                                  .profileProvider
-                                  .isUploadingPhoto,
-                              onEditTap: _pickAndUploadPhoto,
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          Center(
-                            child: Text(
-                              'Bonjour ${profile?.name ?? ''}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          Center(
-                            child: Text(
-                              profile?.sex == Sex.femme
-                                  ? 'Étudiante'
-                                  : 'Étudiant',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          _StatsRow(
-                            tripsProposed:
-                                _placeholderTripsProposed,
-                            tripsCompleted:
-                                _placeholderTripsCompleted,
-                            rating: _placeholderRating,
-                            isVerified:
-                                profile?.isVerified ?? false,
-                          ),
-
-                          const SizedBox(height: 28),
-
-                          // MES INFORMATIONS
-                          _MenuTile(
-                            icon: Icons.person_outline_rounded,
-                            iconBg: const Color(0xFFEDE7FF),
-                            iconColor: AppColors.accentPurple,
-                            title: 'Mes informations',
-                            subtitle:
-                                'Nom, e-mail, téléphone, établissement',
-                            onTap: profile == null
-                                ? null
-                                : () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            EditProfileScreen(
-                                          profileProvider:
-                                              widget.profileProvider,
-                                          profile: profile,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // MES TRAJETS
-                          _MenuTile(
-                            icon:
-                                Icons.directions_car_outlined,
-                            iconBg:
-                                const Color(0xFFE1F5EA),
-                            iconColor: AppColors.success,
-                            title: 'Mes trajets',
-                            subtitle:
-                                'Voir mes trajets proposés et réservés',
-                            onTap: () {
-                              context.push('/trips/history');
-                            },
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // MES AVIS
-                          _MenuTile(
-                            icon: Icons.star_outline_rounded,
-                            iconBg: AppColors.accentYellow
-                                .withValues(alpha: 0.18),
-                            iconColor:
-                                AppColors.accentYellow,
-                            title: 'Mes avis',
-                            subtitle:
-                                'Ce que les autres disent de moi',
-                            onTap: () {
-                              context.push('/reviews');
-                            },
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // MES PRÉFÉRENCES
-                          _MenuTile(
-                            icon: Icons.settings_outlined,
-                            iconBg: AppColors.inputFill,
-                            iconColor: AppColors.primary,
-                            title: 'Mes préférences',
-                            subtitle:
-                                'Notifications, langue, confidentialité',
-                            onTap: () {
-                              _comingSoon(
-                                'Préférences bientôt disponibles.',
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // DÉCONNEXION
-                          _SignOutButton(
-                            onTap: _confirmSignOut,
-                          ),
-                        ],
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(errorMessage, textAlign: TextAlign.center),
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 110),
+                    children: [
+                      _ProfileHeader(
+                        onSettingsTap: () {
+                          _comingSoon('Préférences bientôt disponibles.');
+                        },
                       ),
+
+                      const SizedBox(height: 24),
+
+                      Center(
+                        child: _AvatarWithEditButton(
+                          name: profile?.name ?? '',
+                          photoUrl: profile?.photoUrl,
+                          isUploading: widget.profileProvider.isUploadingPhoto,
+                          onEditTap: _pickAndUploadPhoto,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      Center(
+                        child: Text(
+                          'Bonjour ${profile?.name ?? ''}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Center(
+                        child: Text(
+                          profile?.sex == Sex.femme ? 'Étudiante' : 'Étudiant',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      _StatsRow(
+                        tripsProposed: _placeholderTripsProposed,
+                        tripsCompleted: _placeholderTripsCompleted,
+                        rating: _placeholderRating,
+                        isVerified: profile?.isVerified ?? false,
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // MES INFORMATIONS
+                      _MenuTile(
+                        icon: Icons.person_outline_rounded,
+                        iconBg: const Color(0xFFEDE7FF),
+                        iconColor: AppColors.accentPurple,
+                        title: 'Mes informations',
+                        subtitle: 'Nom, e-mail, téléphone, établissement',
+                        onTap: profile == null
+                            ? null
+                            : () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => EditProfileScreen(
+                                      profileProvider: widget.profileProvider,
+                                      profile: profile,
+                                    ),
+                                  ),
+                                );
+                              },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // MES TRAJETS
+                      _MenuTile(
+                        icon: Icons.directions_car_outlined,
+                        iconBg: const Color(0xFFE1F5EA),
+                        iconColor: AppColors.success,
+                        title: 'Mes trajets',
+                        subtitle: 'Voir mes trajets proposés et réservés',
+                        onTap: () {
+                          context.push('/trips/history');
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // MES AVIS
+                      _MenuTile(
+                        icon: Icons.star_outline_rounded,
+                        iconBg: AppColors.accentYellow.withValues(alpha: 0.18),
+                        iconColor: AppColors.accentYellow,
+                        title: 'Mes avis',
+                        subtitle: 'Ce que les autres disent de moi',
+                        onTap: () {
+                          context.push('/reviews');
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // MES PRÉFÉRENCES
+                      _MenuTile(
+                        icon: Icons.settings_outlined,
+                        iconBg: AppColors.inputFill,
+                        iconColor: AppColors.primary,
+                        title: 'Mes préférences',
+                        subtitle: 'Notifications, langue, confidentialité',
+                        onTap: () {
+                          _comingSoon('Préférences bientôt disponibles.');
+                        },
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // DÉCONNEXION
+                      _SignOutButton(onTap: _confirmSignOut),
+                    ],
+                  ),
           ),
 
           // NAVIGATION DU BAS
-          bottomNavigationBar:
-              const HomeBottomNavigation(
-            currentIndex: 4,
-          ),
+          bottomNavigationBar: const HomeBottomNavigation(currentIndex: 4),
         );
       },
     );
@@ -348,9 +312,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 class _ProfileHeader extends StatelessWidget {
   final VoidCallback onSettingsTap;
 
-  const _ProfileHeader({
-    required this.onSettingsTap,
-  });
+  const _ProfileHeader({required this.onSettingsTap});
 
   @override
   Widget build(BuildContext context) {
@@ -370,8 +332,7 @@ class _ProfileHeader extends StatelessWidget {
 
         const Expanded(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'CarPool Lite',
@@ -383,10 +344,7 @@ class _ProfileHeader extends StatelessWidget {
               ),
               Text(
                 'Covoiturage pour étudiants',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -394,10 +352,7 @@ class _ProfileHeader extends StatelessWidget {
 
         IconButton(
           onPressed: onSettingsTap,
-          icon: const Icon(
-            Icons.settings_outlined,
-            color: AppColors.navy,
-          ),
+          icon: const Icon(Icons.settings_outlined, color: AppColors.navy),
         ),
       ],
     );
@@ -426,11 +381,7 @@ class _AvatarWithEditButton extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        ProfileAvatar(
-          name: name,
-          radius: 48,
-          photoUrl: photoUrl,
-        ),
+        ProfileAvatar(name: name, radius: 48, photoUrl: photoUrl),
 
         if (isUploading)
           Positioned.fill(
@@ -456,19 +407,13 @@ class _AvatarWithEditButton extends StatelessWidget {
           right: -2,
           bottom: -2,
           child: GestureDetector(
-            onTap: isUploading
-                ? null
-                : onEditTap,
+            onTap: isUploading ? null : onEditTap,
             child: Container(
-              padding:
-                  const EdgeInsets.all(7),
+              padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white,
-                  width: 2,
-                ),
+                border: Border.all(color: Colors.white, width: 2),
               ),
               child: const Icon(
                 Icons.camera_alt_rounded,
@@ -503,23 +448,16 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 18,
-        horizontal: 8,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius:
-            BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.border,
-        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
           _StatItem(
-            icon:
-                Icons.directions_car_filled_rounded,
+            icon: Icons.directions_car_filled_rounded,
             iconColor: AppColors.primary,
             value: '$tripsProposed',
             label: 'Trajets\nproposés',
@@ -538,8 +476,7 @@ class _StatsRow extends StatelessWidget {
 
           _StatItem(
             icon: Icons.star_rounded,
-            iconColor:
-                AppColors.accentYellow,
+            iconColor: AppColors.accentYellow,
             value: '$rating',
             label: 'Note\nmoyenne',
           ),
@@ -547,13 +484,9 @@ class _StatsRow extends StatelessWidget {
           _StatDivider(),
 
           _StatItem(
-            icon:
-                Icons.verified_user_rounded,
-            iconColor: isVerified
-                ? AppColors.success
-                : AppColors.textSecondary,
-            value:
-                isVerified ? '100%' : '0%',
+            icon: Icons.verified_user_rounded,
+            iconColor: isVerified ? AppColors.success : AppColors.textSecondary,
+            value: isVerified ? '100%' : '0%',
             label: 'Profil\nvérifié',
           ),
         ],
@@ -569,11 +502,7 @@ class _StatsRow extends StatelessWidget {
 class _StatDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 44,
-      color: AppColors.border,
-    );
+    return Container(width: 1, height: 44, color: AppColors.border);
   }
 }
 
@@ -599,11 +528,7 @@ class _StatItem extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: iconColor,
-            size: 20,
-          ),
+          Icon(icon, color: iconColor, size: 20),
 
           const SizedBox(height: 6),
 
@@ -658,51 +583,37 @@ class _MenuTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius:
-          BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding:
-            const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius:
-              BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.border,
-          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
             Container(
-              padding:
-                  const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: iconBg,
-                borderRadius:
-                    BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 20,
-              ),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
 
             const SizedBox(width: 14),
 
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
                     style: const TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       fontSize: 14.5,
-                      color:
-                          AppColors.textPrimary,
+                      color: AppColors.textPrimary,
                     ),
                   ),
 
@@ -712,8 +623,7 @@ class _MenuTile extends StatelessWidget {
                     subtitle,
                     style: const TextStyle(
                       fontSize: 12,
-                      color:
-                          AppColors.textSecondary,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -722,8 +632,7 @@ class _MenuTile extends StatelessWidget {
 
             const Icon(
               Icons.chevron_right_rounded,
-              color:
-                  AppColors.textSecondary,
+              color: AppColors.textSecondary,
             ),
           ],
         ),
@@ -739,34 +648,22 @@ class _MenuTile extends StatelessWidget {
 class _SignOutButton extends StatelessWidget {
   final VoidCallback onTap;
 
-  const _SignOutButton({
-    required this.onTap,
-  });
+  const _SignOutButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius:
-          BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 16,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         decoration: BoxDecoration(
-          color: AppColors.error
-              .withValues(alpha: 0.08),
-          borderRadius:
-              BorderRadius.circular(16),
+          color: AppColors.error.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: const Row(
           children: [
-            Icon(
-              Icons.logout_rounded,
-              color: AppColors.error,
-            ),
+            Icon(Icons.logout_rounded, color: AppColors.error),
 
             SizedBox(width: 12),
 
@@ -775,17 +672,13 @@ class _SignOutButton extends StatelessWidget {
                 'Se déconnecter',
                 style: TextStyle(
                   color: AppColors.error,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                   fontSize: 15,
                 ),
               ),
             ),
 
-            Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.error,
-            ),
+            Icon(Icons.chevron_right_rounded, color: AppColors.error),
           ],
         ),
       ),
