@@ -29,6 +29,7 @@ import '../../features/universities/presentation/pages/university_list_page.dart
 import '../../features/user_management/presentation/screens/user_management_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/bookings/presentation/providers/booking_provider.dart';
+import '../../features/profile/presentation/screens/preferences_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/auth',
@@ -80,6 +81,8 @@ final GoRouter appRouter = GoRouter(
         profileProvider: Injector.createProfileProvider(),
       ),
     ),
+    GoRoute(path: '/preferences', builder: (_, _) => const PreferencesScreen()),
+
     GoRoute(
       path: '/universities',
       builder: (_, _) => ChangeNotifierProvider(
@@ -103,31 +106,29 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/trips', builder: (_, _) => const SearchTripsScreen()),
 
     GoRoute(
-  path: '/bookings',
-  builder: (_, _) {
-    final user = Injector.authProvider.user;
+      path: '/bookings',
+      builder: (_, _) {
+        final user = Injector.authProvider.user;
 
-    if (user == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text('Utilisateur non connecté'),
-        ),
-      );
-    }
-
-    return ChangeNotifierProvider(
-      create: (_) => Injector.createBookingProvider(),
-      child: Builder(
-        builder: (context) {
-          return MyBookingsScreen(
-            bookingProvider: context.read<BookingProvider>(),
-            passengerId: user.uid,
+        if (user == null) {
+          return const Scaffold(
+            body: Center(child: Text('Utilisateur non connecté')),
           );
-        },
-      ),
-    );
-  },
-),
+        }
+
+        return ChangeNotifierProvider(
+          create: (_) => Injector.createBookingProvider(),
+          child: Builder(
+            builder: (context) {
+              return MyBookingsScreen(
+                bookingProvider: context.read<BookingProvider>(),
+                passengerId: user.uid,
+              );
+            },
+          ),
+        );
+      },
+    ),
     GoRoute(path: '/vehicles', builder: (_, _) => const VehicleListScreen()),
     GoRoute(
       path: '/chat',
