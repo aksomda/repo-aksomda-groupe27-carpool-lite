@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/map/presentation/screens/map_screen.dart';
 import '../../features/trips/presentation/pages/publish_trip_page.dart';
 import '../../features/trips/presentation/pages/search_trips_page.dart';
 import '../../features/trips/presentation/pages/trip_history_page.dart';
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/trips/publish',
+  initialLocation: '/trips/map',
 
   routes: [
     // 1. Authentification & Profil
@@ -39,6 +40,9 @@ final GoRouter appRouter = GoRouter(
       path: '/trips',
       builder: (context, state) => const SearchTripsPage(),
       routes: [
+        // map
+        GoRoute(path: 'map', builder: (context, state) => const MapScreen()),
+
         // Publication
         GoRoute(path: 'publish', builder: (context, state) => const PublishTripPage()),
 
